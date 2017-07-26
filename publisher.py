@@ -94,6 +94,41 @@ try:
 except Exception, e:
     print e.message
 
+class Documents:
+    def __init__(self, settings):
+        self.__settings = settings
+
+    @property
+    def items_to_publish(self):
+        return [Doc(self.__settings,"")]
+
+    @property
+    def items_to_unpublish(self):
+        return []
+
+
+class Doc:
+    def __init__(self, config, path):
+        self.__config = config
+        self.path = path
+
+    @property
+    def name(self):
+        return "Unknown"
+
+    @property
+    def is_publishable(self):
+        return True
+
+    @property
+    def issues(self):
+        return None
+
+    def publish(self):
+        pass
+
+    def unpublish(self):
+        pass
 
 
 def get_configuration_settings():
@@ -137,7 +172,21 @@ def get_configuration_settings():
 
 def main():
     settings = get_configuration_settings()
-    print(settings.root_directory)
+    documents = Documents(settings)
+    for doc in documents.items_to_publish:
+        if doc.is_publishable:
+            try:
+                doc.publish()
+            except PublishException as ex:
+                logger.error("Unable to publish %s because %s", doc.name, ex.message)
+        else:
+            logger.warn("Unable to publish %s because %s", doc.name, doc.issues)
+    for doc in documents.items_to_unpublish:
+        try:
+            doc.unpublish()
+        except PublishException as ex:
+            logger.error("Unable to remove service for %s because %s", doc.name, ex)
+
 
 if __name__ == '__main__':
     main()
