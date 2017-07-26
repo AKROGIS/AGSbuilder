@@ -94,6 +94,10 @@ try:
 except Exception, e:
     print e.message
 
+class PublishException(Exception):
+    """Raise when unable to Make a change on the server"""
+
+
 class Documents:
     def __init__(self, settings):
         self.__settings = settings
