@@ -1,3 +1,12 @@
+import logging.config
+import config_logger
+
+logging.config.dictConfig(config_logger.config)
+logging.raiseExceptions = False
+logger = logging.getLogger('main')
+logger.info("Logging Started")
+
+
 # input:
 #  1) A root folder with a set of mxd/lyr files optionally in folders (1 deep)
 #  2) Table (csv, fgdb, sql, ...) of publishing properties for each item in (1)
