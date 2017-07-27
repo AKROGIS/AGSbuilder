@@ -81,7 +81,6 @@ class Doc:
         import arcpy
 
         # FIXME: check inputs
-        connection_file_path = self.__config.server
         if self.__is_image_service:
             create_sddraft = arcpy.CreateImageSDDraft
         else:
