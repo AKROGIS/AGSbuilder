@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+import os.path
 import logging.config
 import config_logger
 
@@ -27,6 +28,7 @@ logger.info("Logging Started")
 #    if modified date of item is newer than (4)[item] or (2)[item] is different than 3[item]
 #       create new *.sd
 
+
 class PublishException(Exception):
     """Raise when unable to Make a change on the server"""
 
@@ -37,7 +39,7 @@ class Documents:
 
     @property
     def items_to_publish(self):
-        return [Doc(self.__settings, "")]
+        return [Doc(self.__settings, None, "")]
 
     @property
     def items_to_unpublish(self):
@@ -45,14 +47,21 @@ class Documents:
 
 
 class Doc:
-    def __init__(self, config, path):
+    def __init__(self, config, folder, path):
         self.__config = config
+        # FIXME: Check that folder and path are valid, before we generate errors
+        base = os.path.splitext(path)[0]
         self.path = path
-        self.__name = path  # TODO reduce to basename
-        self.__draft_file_name = path  # TODO replace extension with .sdraft
-        self.__sd_file_name = path  # TODO replace extension with .sd
+        self.__name = os.path.basename(base)
+        self.__draft_file_name = base + '.sddraft'
+        self.__sd_file_name = base + '.sd'
         self.__sd_file_is_ready = False
-        self.__service_name = path  # TODO replace with service name (folder/base)
+        self.__service_name = self.__sanitize_service_name(self.name)
+        self.__folder_name = self.__sanitize_service_name(folder)
+        self.__service_copy_data_to_server = False
+        self.__service_server_type = 'FROM_CONNECTION_FILE'
+        self.__service_summary = None  # or string
+        self.__service_tags = None  # or string with comma separated tags
 
     @property
     def name(self):
@@ -79,18 +88,47 @@ class Doc:
     def unpublish(self):
         pass
 
+    @staticmethod
+    def __sanitize_service_name(name, replacement='_'):
+        """Replace all non alphanumeric characters with replacement
+
+        The name can only contain alphanumeric characters and underscores.
+        No spaces or special characters are allowed.
+        The name cannot be more than 120 characters in length.
+        http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm"""
+
+        if name is None:
+            return None
+        clean_chars = [c if c.isalnum() else replacement for c in name]
+        return ''.join(clean_chars)[:120]
+
+    def __is_image_service(self):
+        # TODO: Implement
+        return self.path is None
+
     def __create_draft_service_definition(self):
-        """Create a service definition draft from a mxd/lyr"""
-        # ========================================
+        """Create a service definition draft from a mxd/lyr
+
+        ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/createimagesddraft.htm
+        ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm
+        """
+
         import arcpy
 
         # FIXME: check inputs
+        connection_file_path = self.__config.server
+        if self.__is_image_service:
+            create_sddraft = arcpy.CreateImageSDDraft
+        else:
+            create_sddraft = arcpy.mapping.CreateMapSDDraft
 
-        # FIXME: Check if this is an image service or not.
-        arcpy.mapping.CreateMapSDDraft(self.path, self.__draft_file_name)
-        arcpy.CreateImageSDDraft(self.path, self.__draft_file_name, self.__service_name)
-
-        # FIXME: check for success
+        try:
+            create_sddraft(self.path, self.__draft_file_name, self.__service_name,
+                           self.__service_server_type, connection_file_path,
+                           self.__service_copy_data_to_server, self.__folder_name,
+                           self.__service_summary, self.__service_tags)
+        except Exception as ex:
+            raise PublishException(ex.message)
 
         # FIXME: Make a replacement service if service exists
 
@@ -126,7 +164,7 @@ class Doc:
                     desc.firstChild.data = new_type
 
         # FIXME: provide python2 and python3 varieties
-        with open(file_name, 'w') as f:
+        with open(file_name, u'w') as f:
             xdoc.writexml(f)
 
     def __publish_service(self):
