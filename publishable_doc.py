@@ -73,7 +73,8 @@ class Doc(object):
         self.__service_server_type = hosted
         self.__service_connection_file_path = None
 
-        if new_value is None or new_value.lower() == hosted.lower():
+        # if you want to do a case insensitive compare, be careful, as new_value may not be text.
+        if new_value is None or new_value == hosted:
             logger.debug('Setting document %s service_server_type to %s and service_connection_file_path to %s',
                          self.name, self.__service_server_type, self.__service_connection_file_path)
             return
