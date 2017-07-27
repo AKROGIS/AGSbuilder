@@ -188,3 +188,13 @@ class Doc:
             logger.debug("arcpy.UploadServiceDefinition_server() complete")
         except Exception as ex:
             raise PublishException(ex.message)
+
+
+# Testing
+def test_input():
+    config = {}
+    doc = Doc(config, r'c:\tmp\folder\map.mxd')
+    print('local name', doc.name, 'service path', doc.service_path)
+
+if __name__ == '__main__':
+    test_input()
