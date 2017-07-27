@@ -10,8 +10,10 @@ class PublishException(Exception):
     """Raise when unable to Make a change on the server"""
 
 
-class Doc:
+class Doc(object):
     def __init__(self, path, folder=None, server=None, config=None):
+        logger.debug("Doc.__init__(path=%s, folder=%s, server=%s, config=%s",
+                     path, folder, server, config)
         self.__config = config
         # FIXME: Check that folder and path are valid, before we generate errors
         self.folder = folder
