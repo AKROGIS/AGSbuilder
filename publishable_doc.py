@@ -14,13 +14,15 @@ class Doc:
     def __init__(self, config, path, folder=None):
         self.__config = config
         # FIXME: Check that folder and path are valid, before we generate errors
-        base = os.path.splitext(path)[0]
+        self.folder = folder
         self.path = path
-        self.__name = os.path.basename(base)
+        base, ext = os.path.splitext(path)
+        self.__basename = os.path.basename(base)
+        self.__ext = ext
         self.__draft_file_name = base + '.sddraft'
         self.__sd_file_name = base + '.sd'
         self.__sd_file_is_ready = False
-        self.__service_name = self.__sanitize_service_name(self.name)
+        self.__service_name = self.__sanitize_service_name(self.__basename)
         self.__folder_name = self.__sanitize_service_name(folder)
         self.__service_copy_data_to_server = False
         self.__service_server_type = 'FROM_CONNECTION_FILE'
@@ -30,7 +32,17 @@ class Doc:
 
     @property
     def name(self):
-        return self.__name
+        if self.folder is None:
+            return self.__basename
+        else:
+            return self.folder + '/' + self.__basename
+
+    @property
+    def service_path(self):
+        if self.__folder_name is None:
+            return self.__service_name
+        else:
+            return self.__folder_name + '/' + self.__service_name
 
     @property
     def is_publishable(self):
