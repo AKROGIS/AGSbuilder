@@ -11,7 +11,7 @@ class PublishException(Exception):
 
 
 class Doc:
-    def __init__(self, config, folder, path):
+    def __init__(self, config, path, folder=None):
         self.__config = config
         # FIXME: Check that folder and path are valid, before we generate errors
         base = os.path.splitext(path)[0]

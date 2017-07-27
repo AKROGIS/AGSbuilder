@@ -31,7 +31,7 @@ class Documents:
 
     @property
     def items_to_publish(self):
-        return [Doc(self.__settings, None, "")]
+        return [Doc(self.__settings, "")]
 
     @property
     def items_to_unpublish(self):
