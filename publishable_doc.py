@@ -24,6 +24,7 @@ class Doc:
         self.__folder_name = self.__sanitize_service_name(folder)
         self.__service_copy_data_to_server = False
         self.__service_server_type = 'FROM_CONNECTION_FILE'
+        self.__service_connection_file_path = self.__config.server
         self.__service_summary = None  # or string
         self.__service_tags = None  # or string with comma separated tags
 
@@ -88,7 +89,7 @@ class Doc:
 
         try:
             create_sddraft(self.path, self.__draft_file_name, self.__service_name,
-                           self.__service_server_type, connection_file_path,
+                           self.__service_server_type, self.__service_connection_file_path,
                            self.__service_copy_data_to_server, self.__folder_name,
                            self.__service_summary, self.__service_tags)
         except Exception as ex:
@@ -164,7 +165,7 @@ class Doc:
         if sd_file is None:
             PublishException("Service Definition (*.sd) file is not ready to publish")
 
-        asg_file = self.__config.server
+        asg_file = self.__service_connection_file_path
         if asg_file is None:
             PublishException("No Server Connection File (*.asg) file provided")
         if not arcpy.Exists(asg_file):
