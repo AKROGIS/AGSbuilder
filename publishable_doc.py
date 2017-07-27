@@ -237,10 +237,98 @@ class Doc(object):
 
 
 # Testing
-def test_input():
-    config = {}
-    doc = Doc(r'c:\tmp\folder\map.mxd', config=config)
-    print('Local name:', doc.name, ', Service path:', doc.service_path, ', Server:', doc.server)
+def test_path_folder_input():
+    doc = Doc(r'.\test_data\test.mxd')
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name == 'test' and doc.service_path == 'test'
+
+    doc = Doc(r'.\test_data\test.mxd', folder=None)
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name == 'test' and doc.service_path == 'test'
+
+    doc = Doc(r'.\test_data\folder\test.mxd', folder='folder')
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name == 'folder/test' and doc.service_path == 'folder/test'
+
+    doc = Doc(r'.\test_data\my weird name!.mxd', folder='%funky folder%')
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name == '%funky folder%/my weird name!' and doc.service_path == '_funky_folder_/my_weird_name_'
+
+
+def test_server_input():
+    class TestConfig(object):
+        def __init__(self):
+            pass
+    config = TestConfig()
+    print("test no config object (no warning; use default)")
+    doc = Doc(r'.\test_data\test.mxd')
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
+    print("test no server attribute on config (no warning; use default)")
+    doc = Doc(r'.\test_data\test.mxd', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
+    print("test config.server is None (no warning; use default)")
+    setattr(config, 'server', None)
+    doc = Doc(r'.\test_data\test.mxd', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
+    print("test config.server is int (should warn and use default)")
+    config.server = 1
+    doc = Doc(r'.\test_data\test.mxd', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
+    print("test config.server is junk text (should warn and use default)")
+    config.server = 'junk'
+    doc = Doc(r'.\test_data\test.mxd', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
+    print("test config.server is file (no warning; use file)")
+    config.server = r'.\test_data\test.ags'
+    doc = Doc(r'.\test_data\test.mxd', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == r'.\test_data\test.ags'
+
+    print("test config.server is MY_HOSTED_SERVICES (no warning; use setting)")
+    config.server = 'MY_HOSTED_SERVICES'
+    doc = Doc(r'.\test_data\test.mxd', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
+    print("test service parameter is None (no warning; should use config)")
+    config.server = r'.\test_data\test.ags'
+    doc = Doc(r'.\test_data\test.mxd', server=None, config=config)
+    print('    Server:', doc.server)
+    assert doc.server == r'.\test_data\test.ags'
+
+    print("test service parameter is int (should warn and use default)")
+    doc = Doc(r'.\test_data\test.mxd', server=1, config=config)
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
+    print("test service parameter is junk text (should warn and use default)")
+    doc = Doc(r'.\test_data\test.mxd', server='junk', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
+    print("test service parameter is is file (no warning; use file)")
+    doc = Doc(r'.\test_data\test.mxd', server=r'.\test_data\test2.ags', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == r'.\test_data\test2.ags'
+
+    print("test service parameter is MY_HOSTED_SERVICES (no warning; use setting")
+    doc = Doc(r'.\test_data\test.mxd', server='MY_HOSTED_SERVICES', config=config)
+    print('    Server:', doc.server)
+    assert doc.server == 'MY_HOSTED_SERVICES'
+
 
 if __name__ == '__main__':
-    test_input()
+    logger.addHandler(logging.StreamHandler())
+    # logger.setLevel(logging.DEBUG)
+    test_path_folder_input()
+    test_server_input()
