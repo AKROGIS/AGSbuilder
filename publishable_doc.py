@@ -11,7 +11,7 @@ class PublishException(Exception):
 
 
 class Doc:
-    def __init__(self, config, path, folder=None):
+    def __init__(self, path, folder=None, server=None, config=None):
         self.__config = config
         # FIXME: Check that folder and path are valid, before we generate errors
         self.folder = folder
@@ -25,8 +25,15 @@ class Doc:
         self.__service_name = self.__sanitize_service_name(self.__basename)
         self.__folder_name = self.__sanitize_service_name(folder)
         self.__service_copy_data_to_server = False
-        self.__service_server_type = 'FROM_CONNECTION_FILE'
-        self.__service_connection_file_path = self.__config.server
+        self.__service_server_type = None
+        self.__service_connection_file_path = None
+        if server is not None:
+            self.server = server
+        else:
+            try:
+                self.server = self.__config.server
+            except AttributeError:
+                self.server = None
         self.__service_summary = None  # or string
         self.__service_tags = None  # or string with comma separated tags
 
@@ -43,6 +50,43 @@ class Doc:
             return self.__service_name
         else:
             return self.__folder_name + '/' + self.__service_name
+
+    @property
+    def server(self):
+        if self.__service_server_type == 'MY_HOSTED_SERVICES':
+            return self.__service_server_type
+        else:
+            return self.__service_connection_file_path
+
+    @server.setter
+    def server(self, new_value):
+        """Set the server connection type/details
+
+        Must be 'MY_HOSTED_SERVICES', or a valid file path.
+        Any other value will default to 'MY_HOSTED_SERVICES'"""
+
+        hosted = 'MY_HOSTED_SERVICES'
+        conn_file = 'FROM_CONNECTION_FILE'
+        # default
+        self.__service_server_type = hosted
+        self.__service_connection_file_path = None
+
+        if new_value is None or new_value.lower() == hosted.lower():
+            logger.debug('Setting document %s service_server_type to %s and service_connection_file_path to %s',
+                         self.name, self.__service_server_type, self.__service_connection_file_path)
+            return
+
+        try:
+            if os.path.exists(new_value):
+                self.__service_server_type = conn_file
+                self.__service_connection_file_path = new_value
+            else:
+                logger.warn('Connection file (%s) not found. Using default.', new_value)
+        except TypeError:
+            logger.warn("Server must be None, '%s', or a file path.  Got %s. Using default.", hosted, new_value)
+
+        logger.debug('Setting document %s service_server_type to %s and service_connection_file_path to %s',
+                     self.name, self.__service_server_type, self.__service_connection_file_path)
 
     @property
     def is_publishable(self):
@@ -193,8 +237,8 @@ class Doc:
 # Testing
 def test_input():
     config = {}
-    doc = Doc(config, r'c:\tmp\folder\map.mxd')
-    print('local name', doc.name, 'service path', doc.service_path)
+    doc = Doc(r'c:\tmp\folder\map.mxd', config=config)
+    print('Local name:', doc.name, ', Service path:', doc.service_path, ', Server:', doc.server)
 
 if __name__ == '__main__':
     test_input()
