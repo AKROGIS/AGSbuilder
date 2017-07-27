@@ -23,7 +23,6 @@ class Doc(object):
         self.path = path
         self.__folder = None
         self.folder = folder
-        self.__sd_file_is_ready = False
         self.__service_name = self.__sanitize_service_name(self.__basename)
         self.__service_folder_name = self.__sanitize_service_name(self.folder)
         self.__service_copy_data_to_server = False
@@ -38,6 +37,9 @@ class Doc(object):
                 self.server = None
         self.__service_summary = None  # or string
         self.__service_tags = None  # or string with comma separated tags
+        self.__have_draft = False
+        self.__draft_analysis_result = None
+        self.__have_service_definition = False
 
     @property
     def path(self):
@@ -136,15 +138,17 @@ class Doc(object):
 
     @property
     def sd_file(self):
-        if self.__sd_file_is_ready:
+        if self.__have_service_definition:
             return self.__sd_file_name
         else:
             return None
 
     def publish(self):
+        # TODO: Implement
         pass
 
     def unpublish(self):
+        # TODO: Implement
         pass
 
     @staticmethod
@@ -165,30 +169,58 @@ class Doc(object):
         # TODO: Implement
         return self.path is None
 
-    def __create_draft_service_definition(self):
+    def __create_draft_service_definition(self, force=False):
         """Create a service definition draft from a mxd/lyr
 
         ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/createimagesddraft.htm
         ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm
         """
+        logger.debug("Creating Draft Service Definition from %s", self.path)
+
+        def delete_old_draft():
+            try:
+                logger.debug("deleting %s", self.__draft_file_name)
+                os.remove(self.__draft_file_name)
+            except Exception:
+                raise PublishException('Unable to delete {0}'.format(self.__draft_file_name))
+
+        if self.path is None:
+            raise PublishException('This document cannot be published.  There is no path to the source.')
+
+        if not os.path.exists(self.path):
+            raise PublishException('This document cannot be published.  The source file is missing.')
+
+        if os.path.exists(self.__draft_file_name):
+            if force:
+                delete_old_draft()
+            else:
+                src_mtime = os.path.getmtime(self.path)
+                dst_mtime = os.path.getmtime(self.__draft_file_name)
+                if src_mtime < dst_mtime:
+                    logger.info("sddraft is newer than source document, skipping.")
+                    self.__have_draft = True
+                    return
+                else:
+                    delete_old_draft()
 
         import arcpy
 
-        # FIXME: check inputs
         if self.__is_image_service:
             create_sddraft = arcpy.CreateImageSDDraft
         else:
             create_sddraft = arcpy.mapping.CreateMapSDDraft
 
         try:
-            create_sddraft(self.path, self.__draft_file_name, self.__service_name,
-                           self.__service_server_type, self.__service_connection_file_path,
-                           self.__service_copy_data_to_server, self.__service_folder_name,
-                           self.__service_summary, self.__service_tags)
+            r = create_sddraft(self.path, self.__draft_file_name, self.__service_name,
+                               self.__service_server_type, self.__service_connection_file_path,
+                               self.__service_copy_data_to_server, self.__service_folder_name,
+                               self.__service_summary, self.__service_tags)
+            self.__draft_analysis_result = r
+            self.__have_draft = True
         except Exception as ex:
             raise PublishException(ex.message)
 
-        # FIXME: Make a replacement service if service exists
+        # TODO: Make a replacement service if service exists
 
     def __create_service_definition(self):
         """Create a Service Definition from a Draft
