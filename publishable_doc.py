@@ -15,17 +15,17 @@ class Doc(object):
         logger.debug("Doc.__init__(path=%s, folder=%s, server=%s, config=%s",
                      path, folder, server, config)
         self.__config = config
-        # FIXME: Check that folder and path are valid, before we generate errors
-        self.folder = folder
+        self.__basename = None
+        self.__ext = None
+        self.__draft_file_name = None
+        self.__sd_file_name = None
+        self.__path = None
         self.path = path
-        base, ext = os.path.splitext(path)
-        self.__basename = os.path.basename(base)
-        self.__ext = ext
-        self.__draft_file_name = base + '.sddraft'
-        self.__sd_file_name = base + '.sd'
+        self.__folder = None
+        self.folder = folder
         self.__sd_file_is_ready = False
         self.__service_name = self.__sanitize_service_name(self.__basename)
-        self.__folder_name = self.__sanitize_service_name(folder)
+        self.__service_folder_name = self.__sanitize_service_name(self.folder)
         self.__service_copy_data_to_server = False
         self.__service_server_type = None
         self.__service_connection_file_path = None
@@ -40,18 +40,53 @@ class Doc(object):
         self.__service_tags = None  # or string with comma separated tags
 
     @property
+    def path(self):
+        return self.__path
+
+    @path.setter
+    def path(self, new_value):
+        """Make sure new_value is text or set to None"""
+        try:
+            if os.path.exists(new_value):
+                self.__path = new_value
+                base, ext = os.path.splitext(new_value)
+                self.__basename = os.path.basename(base)
+                self.__ext = ext
+                self.__draft_file_name = base + '.sddraft'
+                self.__sd_file_name = base + '.sd'
+            else:
+                logger.warn('Path (%s) Not found. This is an invalid document.', new_value)
+        except TypeError:
+            logger.warn("Path must be text.  Got %s. This is an invalid document.", type(new_value))
+
+    @property
+    def folder(self):
+        return self.__folder
+
+    @folder.setter
+    def folder(self, new_value):
+        """Make sure new_value is text or set to None"""
+        if new_value is None:
+            self.__folder = None
+            return
+        try:
+            _ = new_value.isalnum()
+            self.__folder = new_value
+        except AttributeError:
+            logger.warn("Folder must be None, or text.  Got %s. Using None.", type(new_value))
+            self.__folder = None
+
+    @property
     def name(self):
-        if self.folder is None:
-            return self.__basename
-        else:
+        if self.folder is not None and self.__basename is not None:
             return self.folder + '/' + self.__basename
+        return self.__basename
 
     @property
     def service_path(self):
-        if self.__folder_name is None:
-            return self.__service_name
-        else:
-            return self.__folder_name + '/' + self.__service_name
+        if self.__service_folder_name is not None and self.__service_name is not None:
+            return self.__service_folder_name + '/' + self.__service_name
+        return self.__service_name
 
     @property
     def server(self):
@@ -148,7 +183,7 @@ class Doc(object):
         try:
             create_sddraft(self.path, self.__draft_file_name, self.__service_name,
                            self.__service_server_type, self.__service_connection_file_path,
-                           self.__service_copy_data_to_server, self.__folder_name,
+                           self.__service_copy_data_to_server, self.__service_folder_name,
                            self.__service_summary, self.__service_tags)
         except Exception as ex:
             raise PublishException(ex.message)
@@ -239,21 +274,59 @@ class Doc(object):
 
 # Testing
 def test_path_folder_input():
+
+    # No need to test no path
+    # IDE will give a warning about missing parameter, and we will crash right away (programming error)
+
+    print("test path is None; Issues Warning")
+    doc = Doc(None)
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name is None and doc.service_path is None
+
+    print("test path is int; Issues Warning")
+    doc = Doc(1)
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name is None and doc.service_path is None
+
+    print("test path is junk text; Issues Warning")
+    doc = Doc('junk')
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name is None and doc.service_path is None
+
+    print("test path is valid file; no folder")
     doc = Doc(r'.\test_data\test.mxd')
     print('Local name:', doc.name, '|    Service path:', doc.service_path)
     assert doc.name == 'test' and doc.service_path == 'test'
 
+    print("test path is valid file; folder is None")
     doc = Doc(r'.\test_data\test.mxd', folder=None)
     print('Local name:', doc.name, '|    Service path:', doc.service_path)
     assert doc.name == 'test' and doc.service_path == 'test'
 
+    print("test path is valid file; folder is int; Issues Warning")
+    doc = Doc(r'.\test_data\folder\test2.mxd', folder=1)
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name == 'test2' and doc.service_path == 'test2'
+
+    print("test path is valid file; folder is text")
+    doc = Doc(r'.\test_data\folder\test2.mxd', folder='folder')
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name == 'folder/test2' and doc.service_path == 'folder/test2'
+
+    print("test path is invalid file; folder is text; Issues Warning")
     doc = Doc(r'.\test_data\folder\test.mxd', folder='folder')
     print('Local name:', doc.name, '|    Service path:', doc.service_path)
-    assert doc.name == 'folder/test' and doc.service_path == 'folder/test'
+    assert doc.name is None and doc.service_path is None
 
+    print("test path is valid file; folder is text (both have special characters)")
     doc = Doc(r'.\test_data\my weird name!.mxd', folder='%funky folder%')
     print('Local name:', doc.name, '|    Service path:', doc.service_path)
     assert doc.name == '%funky folder%/my weird name!' and doc.service_path == '_funky_folder_/my_weird_name_'
+
+    print("test path is valid file; folder is text (both have special characters)")
+    doc = Doc(r'.\test_data\%funky folder%\test3.mxd', folder='%funky folder%')
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    assert doc.name == '%funky folder%/test3' and doc.service_path == '_funky_folder_/test3'
 
 
 def test_server_input():
