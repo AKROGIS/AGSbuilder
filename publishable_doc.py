@@ -19,6 +19,7 @@ class Doc(object):
         self.__ext = None
         self.__draft_file_name = None
         self.__sd_file_name = None
+        self.__is_image_service = False
         self.__path = None
         self.path = path
         self.__folder = None
@@ -49,11 +50,15 @@ class Doc(object):
     def path(self, new_value):
         """Make sure new_value is text or set to None"""
         try:
+            # FIXME: if this is an image service then it is a dataset a fgdb (which isn't a real file)
+            # TODO: set self.__is_image_service here
             if os.path.exists(new_value):
                 self.__path = new_value
                 base, ext = os.path.splitext(new_value)
                 self.__basename = os.path.basename(base)
                 self.__ext = ext
+                # TODO: Allow draft and sd to be created in a new location from settings (path may be read only)
+                # TODO: This will not work for image services
                 self.__draft_file_name = base + '.sddraft'
                 self.__sd_file_name = base + '.sd'
             else:
@@ -130,14 +135,38 @@ class Doc(object):
 
     @property
     def is_publishable(self):
+
+        # TODO: if *.sd file exists and is newer than source, then return True
+
+        if not self.__draft_analysis_result:
+            try:
+                self.__analyze_draft_service_definition()
+            except PublishException as ex:
+                logger.warn("Unable to analyze the service: %s", ex.message)
+                return False
+        if not self.__draft_analysis_result:
+            return False
+        if 0 < len(self.__draft_analysis_result['errors']):
+            return False
         return True
 
     @property
     def issues(self):
-        return None
+        if not self.__draft_analysis_result:
+            try:
+                self.__analyze_draft_service_definition()
+            except PublishException as ex:
+                logger.warn("Unable to analyze the service: %s", ex.message)
+                return False
+        if not self.__draft_analysis_result:
+            return False
+        if 0 == len(self.__draft_analysis_result['errors']):
+            return None
+        return self.__draft_analysis_result['errors']
 
     @property
     def sd_file(self):
+        # TODO: this may not be required
         if self.__have_service_definition:
             return self.__sd_file_name
         else:
@@ -165,12 +194,10 @@ class Doc(object):
         clean_chars = [c if c.isalnum() else replacement for c in name]
         return ''.join(clean_chars)[:120]
 
-    def __is_image_service(self):
-        # TODO: Implement
-        return self.path is None
-
     def __create_draft_service_definition(self, force=False):
         """Create a service definition draft from a mxd/lyr
+
+        Note: a *.sddraft file is deleted once it is used to create a *.sd file
 
         ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/createimagesddraft.htm
         ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm
@@ -205,13 +232,18 @@ class Doc(object):
 
         import arcpy
 
+        source = self.path
         if self.__is_image_service:
             create_sddraft = arcpy.CreateImageSDDraft
         else:
             create_sddraft = arcpy.mapping.CreateMapSDDraft
+            try:
+                source = arcpy.mapping.MapDocument(self.path)
+            except Exception as ex:
+                PublishException(ex.message)
 
         try:
-            r = create_sddraft(self.path, self.__draft_file_name, self.__service_name,
+            r = create_sddraft(source, self.__draft_file_name, self.__service_name,
                                self.__service_server_type, self.__service_connection_file_path,
                                self.__service_copy_data_to_server, self.__service_folder_name,
                                self.__service_summary, self.__service_tags)
@@ -222,18 +254,46 @@ class Doc(object):
 
         # TODO: Make a replacement service if service exists
 
-    def __create_service_definition(self):
-        """Create a Service Definition from a Draft
+    def __analyze_draft_service_definition(self):
+        """Analyze a Service Definition Draft (.sddraft) files for readiness to publish
 
-        both are file paths, the first exists, the second does not"""
+        http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/analyzeforsd.htm
+        """
+        if self.__draft_analysis_result is not None:
+            return
 
-        # FIXME: check inputs
-
+        if not self.__have_draft:
+            self.__create_draft_service_definition()
+        if not self.__have_draft:
+            logger.error('Unable to get a draft service definition to analyze')
+            return
         import arcpy
+        try:
+            self.__draft_analysis_result = arcpy.mapping.AnalyzeForSD(r"C:\Project\Counties.sddraft")
+        except Exception as ex:
+            PublishException('Unable to analyze draft service definition: %s', ex.message)
 
-        arcpy.StageService_server(self.__draft_file_name, self.__sd_file_name)
+    def __create_service_definition(self, force=False):
+        """Converts a service definition draft (.sddraft) into a service definition
 
-        # FIXME: check for success
+        Once staged, the input draft service definition is deleted.
+
+        http://desktop.arcgis.com/en/arcmap/latest/tools/server-toolbox/stage-service.htm
+        """
+
+        # TODO: if *.sd file exists and is newer than source, then do nothing (unless force = True)
+
+        # TODO: check and remove an existing SD file (see code in sddraft)
+
+        if not self.is_publishable:
+            PublishException("Service Definition Draft has issues and is not ready to publish")
+
+        try:
+            import arcpy
+            arcpy.StageService_server(self.__draft_file_name, self.__sd_file_name)
+            self.__have_service_definition = True
+        except Exception as ex:
+            PublishException('Unable to analyze draft service definition: %s', ex.message)
 
     def create_replacement_service_draft(self):
         """Modify the service definition draft to overwrite the existing service
@@ -284,21 +344,22 @@ class Doc(object):
         AGOL/Portal services will be shared per the settings in the sd_file
         """
 
-        import arcpy
-
-        sd_file = self.sd_file
-        if sd_file is None:
+        if not self.__have_service_definition:
+            self.__create_service_definition()
+        if not self.__have_service_definition:
             PublishException("Service Definition (*.sd) file is not ready to publish")
 
-        asg_file = self.__service_connection_file_path
-        if asg_file is None:
-            PublishException("No Server Connection File (*.asg) file provided")
-        if not arcpy.Exists(asg_file):
-            PublishException("Server Connection File ({0}) file not found".format(asg_file))
+        if self.__service_connection_file_path is None:
+            # conn = ' '.join([word.capitalize() for word in self.__service_server_type.split('_')])
+            conn = 'My Hosted Services'
+        else:
+            conn = self.__service_connection_file_path
 
         try:
-            logger.debug("Begin arcpy.UploadServiceDefinition_server(%s, %s)", sd_file, asg_file)
-            arcpy.UploadServiceDefinition_server(sd_file, asg_file)
+            import arcpy
+            logger.debug("Begin arcpy.UploadServiceDefinition_server(%s, %s)", self.__sd_file_name, conn)
+            # TODO: Support the other options
+            arcpy.UploadServiceDefinition_server(self.__sd_file_name, conn)
             logger.debug("arcpy.UploadServiceDefinition_server() complete")
         except Exception as ex:
             raise PublishException(ex.message)
