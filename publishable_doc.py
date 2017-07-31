@@ -204,13 +204,6 @@ class Doc(object):
         """
         logger.debug("Creating Draft Service Definition from %s", self.path)
 
-        def delete_old_draft():
-            try:
-                logger.debug("deleting %s", self.__draft_file_name)
-                os.remove(self.__draft_file_name)
-            except Exception:
-                raise PublishException('Unable to delete {0}'.format(self.__draft_file_name))
-
         if self.path is None:
             raise PublishException('This document cannot be published.  There is no path to the source.')
 
@@ -219,7 +212,7 @@ class Doc(object):
 
         if os.path.exists(self.__draft_file_name):
             if force:
-                delete_old_draft()
+                self.__delete_file(self.__draft_file_name)
             else:
                 src_mtime = os.path.getmtime(self.path)
                 dst_mtime = os.path.getmtime(self.__draft_file_name)
@@ -228,7 +221,7 @@ class Doc(object):
                     self.__have_draft = True
                     return
                 else:
-                    delete_old_draft()
+                    self.__delete_file(self.__draft_file_name)
 
         import arcpy
 
@@ -363,6 +356,15 @@ class Doc(object):
             logger.debug("arcpy.UploadServiceDefinition_server() complete")
         except Exception as ex:
             raise PublishException(ex.message)
+
+    @staticmethod
+    def __delete_file(path):
+        try:
+            logger.debug("deleting %s", path)
+            os.remove(path)
+        except Exception:
+            raise PublishException('Unable to delete {0}'.format(path))
+
 
 
 # Testing
