@@ -198,6 +198,10 @@ class Doc(object):
         logger.debug("Stop and Remove %s", self.service_path)
         # TODO: Implement
 
+    @property
+    def is_live(self):
+        return self.__service_is_live()
+
     @staticmethod
     def __sanitize_service_name(name, replacement='_'):
         """Replace all non alphanumeric characters with replacement
@@ -263,7 +267,7 @@ class Doc(object):
         except Exception as ex:
             raise PublishException(ex.message)
 
-        if self.__service_is_live():
+        if self.is_live:
             self.__create_replacement_service_draft()
 
     def __service_is_live(self):
@@ -399,7 +403,7 @@ class Doc(object):
             conn = self.__service_connection_file_path
 
         # only publish if we need to.
-        if force or not self.__service_is_live() or self.__have_new_service_definition:
+        if force or not self.is_live or self.__have_new_service_definition:
             try:
                 import arcpy
                 logger.debug("Begin arcpy.UploadServiceDefinition_server(%s, %s)", self.__sd_file_name, conn)
