@@ -135,8 +135,23 @@ class Doc(object):
 
     @property
     def is_publishable(self):
+        """
+        Check if a source is ready to publish to the server.
 
-        # TODO: if *.sd file exists and is newer than source, then return True
+        Returns True or False, should not throw any exceptions.
+        May need to create a draft service definition to analyze the file.  Any exceptions will be swallowed.
+        If there is an existing sd file newer than the source, then we are ready to publish, otherwise
+        create a draft file (if necessary) and analyze.  If there are no errors in the analysis then it
+        is ready to publish.
+
+        :return: Bool
+        """
+        if not self.__is_image_service and os.path.exists(self.__sd_file_name):
+            src_mtime = os.path.getmtime(self.path)
+            dst_mtime = os.path.getmtime(self.__sd_file_name)
+            if src_mtime < dst_mtime:
+                logger.debug("Service definition is newer than source, ready to publish.")
+                return True
 
         if not self.__draft_analysis_result:
             try:
@@ -145,8 +160,10 @@ class Doc(object):
                 logger.warn("Unable to analyze the service: %s", ex.message)
                 return False
         if not self.__draft_analysis_result:
+            logger.warn("Unable to analyze service definition draft, NOT ready to publish.")
             return False
         if 0 < len(self.__draft_analysis_result['errors']):
+            logger.debug("Service definition draft has errors, NOT ready to publish.")
             return False
         return True
 
