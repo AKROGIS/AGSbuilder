@@ -579,8 +579,45 @@ def test_server_input():
     assert doc.server == 'MY_HOSTED_SERVICES'
 
 
+def test_service_check():
+
+    # No need to test no path
+    # IDE will give a warning about missing parameter, and we will crash right away (programming error)
+
+    print("test defaults; Issues Warnings")
+    doc = Doc(None)
+    alive = doc.is_live
+    print('Server:', doc.server_url, 'Service', doc.service_path, 'Alive:', alive)
+    assert alive
+
+    print("test bad ags file; Issues Warnings")
+    doc = Doc(r'.\test_data\test.mxd', server=r'.\test_data\test2.ags')
+    alive = doc.is_live
+    print('Server:', doc.server_url, 'Service', doc.service_path, 'Alive:', alive)
+    assert alive
+
+    print("test missing doc w/o folder; Issues Warnings")
+    doc = Doc(r'.\test_data\test.mxd', server=r'.\test_data\real.ags')
+    alive = doc.is_live
+    print('Server:', doc.server_url, 'Service', doc.service_path, 'Alive:', alive)
+    assert not alive
+
+    print("test missing doc in folder (bad); Issues Warnings")
+    doc = Doc(r'.\test_data\test.mxd', folder='test', server=r'.\test_data\real.ags')
+    alive = doc.is_live
+    print('Server:', doc.server_url, 'Service', doc.service_path, 'Alive:', alive)
+    assert not alive
+
+    print("test doc (good) in folder (good); Issues Warnings")
+    doc = Doc(r'.\test_data\dsm_HS.mxd', folder='Ifsar', server=r'.\test_data\real.ags')
+    alive = doc.is_live
+    print('Server:', doc.server_url, 'Service', doc.service_path, 'Alive:', alive)
+    assert alive
+
+
 if __name__ == '__main__':
     logger.addHandler(logging.StreamHandler())
     # logger.setLevel(logging.DEBUG)
     test_path_folder_input()
     test_server_input()
+    test_service_check()
