@@ -185,8 +185,14 @@ class Doc(object):
         self.__publish_service()
 
     def unpublish(self):
+        """Stop and delete a service that is already published
+
+        This requires Rest API URL, Admin credentials and the AGS Rest API
+        The ags connection file cannot by used with arcpy to admin the server
+        ref: http://resources.arcgis.com/en/help/rest/apiref/index.html
+        """
+        logger.debug("Stop and Remove %s", self.service_path)
         # TODO: Implement
-        pass
 
     @staticmethod
     def __sanitize_service_name(name, replacement='_'):
@@ -253,7 +259,17 @@ class Doc(object):
         except Exception as ex:
             raise PublishException(ex.message)
 
-        # TODO: Make a replacement service if service exists
+        if self.__service_is_live():
+            self.__create_replacement_service_draft()
+
+    def __service_is_live(self):
+        """Check if this source is already published on the server
+
+        Requires parsing the server URl out of the binary *.ags file, or a server URL from config
+        Need to use AGS Rest API (http://resources.arcgis.com/en/help/rest/apiref/index.html)
+        """
+        logger.debug("Check if %s exists on the server", self.service_path)
+        # TODO: Implement
 
     def __analyze_draft_service_definition(self):
         """Analyze a Service Definition Draft (.sddraft) files for readiness to publish
@@ -295,7 +311,7 @@ class Doc(object):
         except Exception as ex:
             PublishException('Unable to analyze draft service definition: %s', ex.message)
 
-    def create_replacement_service_draft(self):
+    def __create_replacement_service_draft(self):
         """Modify the service definition draft to overwrite the existing service
 
         The existing draft file is overwritten.
@@ -355,6 +371,7 @@ class Doc(object):
         else:
             conn = self.__service_connection_file_path
 
+        # TODO: Only publish if the service does not exist, or this is an overwrite SD
         try:
             import arcpy
             logger.debug("Begin arcpy.UploadServiceDefinition_server(%s, %s)", self.__sd_file_name, conn)
