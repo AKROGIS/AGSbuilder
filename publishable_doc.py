@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import os.path
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -279,12 +280,21 @@ class Doc(object):
         if self.server_url is None:
             logger.debug("Server URL is undefined. Assume service exists")
             return True
-        # TODO: Implement
-        # use requests to get services from:
-        # self.server_url + '/rest/services?f=json' if self.__service_folder_name is None
-        # or self.server_url + '/rest/services/' + self.__service_folder_name + '?f=json'
-        # JSON response is like: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
-        return True
+        if self.__service_folder_name is None:
+            url = self.server_url + '/rest/services?f=json'
+        else:
+            url = self.server_url + '/rest/services/' + self.__service_folder_name + '?f=json'
+        logger.debug("looking for services at: %s", url)
+        try:
+            json = requests.get(url).json()
+            # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
+            services = [service['name'].lower() for service in json['services']]
+        except Exception as ex:
+            logger.debug("Failed to check for service, %s. Assume service exists", ex.message)
+            return True
+
+        logger.debug("services found: %s", services)
+        return self.service_path.lower() in services
 
     def __analyze_draft_service_definition(self):
         """Analyze a Service Definition Draft (.sddraft) files for readiness to publish
