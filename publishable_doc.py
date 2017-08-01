@@ -279,13 +279,12 @@ class Doc(object):
         """Converts a service definition draft (.sddraft) into a service definition
 
         Once staged, the input draft service definition is deleted.
+        Calling is_publishable will check for an existing *.sd file that is newer than source
 
         http://desktop.arcgis.com/en/arcmap/latest/tools/server-toolbox/stage-service.htm
         """
-
-        # TODO: if *.sd file exists and is newer than source, then do nothing (unless force = True)
-
-        # TODO: check and remove an existing SD file (see code in sddraft)
+        if force:
+            self.__delete_file(self.__sd_file_name)
 
         if not self.is_publishable:
             PublishException("Service Definition Draft has issues and is not ready to publish")
