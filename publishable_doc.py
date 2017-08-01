@@ -182,8 +182,7 @@ class Doc(object):
         return self.__draft_analysis_result['errors']
 
     def publish(self):
-        # TODO: Implement
-        pass
+        self.__publish_service()
 
     def unpublish(self):
         # TODO: Implement
@@ -318,7 +317,7 @@ class Doc(object):
         with open(file_name, u'w') as f:
             xdoc.writexml(f)
 
-    def __publish_service(self):
+    def __publish_service(self, force=False):
         """Publish Service Definition
 
         Uploads and publishes a GIS service to a specified GIS server based on a staged service definition (.sd) file.
@@ -346,7 +345,7 @@ class Doc(object):
         """
 
         if not self.__have_service_definition:
-            self.__create_service_definition()
+            self.__create_service_definition(force=force)
         if not self.__have_service_definition:
             PublishException("Service Definition (*.sd) file is not ready to publish")
 
@@ -372,7 +371,6 @@ class Doc(object):
             os.remove(path)
         except Exception:
             raise PublishException('Unable to delete {0}'.format(path))
-
 
 
 # Testing
