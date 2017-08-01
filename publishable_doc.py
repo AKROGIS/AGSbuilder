@@ -41,6 +41,7 @@ class Doc(object):
         self.__have_draft = False
         self.__draft_analysis_result = None
         self.__have_service_definition = False
+        self.__have_new_service_definition = False
 
     @property
     def path(self):
@@ -151,6 +152,7 @@ class Doc(object):
             dst_mtime = os.path.getmtime(self.__sd_file_name)
             if src_mtime < dst_mtime:
                 logger.debug("Service definition is newer than source, ready to publish.")
+                self.__have_service_definition = True
                 return True
 
         if not self.__draft_analysis_result:
@@ -304,12 +306,14 @@ class Doc(object):
         if not self.is_publishable:
             PublishException("Service Definition Draft has issues and is not ready to publish")
 
-        try:
-            import arcpy
-            arcpy.StageService_server(self.__draft_file_name, self.__sd_file_name)
-            self.__have_service_definition = True
-        except Exception as ex:
-            PublishException('Unable to analyze draft service definition: %s', ex.message)
+        if not self.__have_service_definition:
+            try:
+                import arcpy
+                arcpy.StageService_server(self.__draft_file_name, self.__sd_file_name)
+                self.__have_service_definition = True
+                self.__have_new_service_definition = True
+            except Exception as ex:
+                PublishException('Unable to analyze draft service definition: %s', ex.message)
 
     def __create_replacement_service_draft(self):
         """Modify the service definition draft to overwrite the existing service
@@ -371,15 +375,16 @@ class Doc(object):
         else:
             conn = self.__service_connection_file_path
 
-        # TODO: Only publish if the service does not exist, or this is an overwrite SD
-        try:
-            import arcpy
-            logger.debug("Begin arcpy.UploadServiceDefinition_server(%s, %s)", self.__sd_file_name, conn)
-            # TODO: Support the other options
-            arcpy.UploadServiceDefinition_server(self.__sd_file_name, conn)
-            logger.debug("arcpy.UploadServiceDefinition_server() complete")
-        except Exception as ex:
-            raise PublishException(ex.message)
+        # only publish if we need to.
+        if force or not self.__service_is_live() or self.__have_new_service_definition:
+            try:
+                import arcpy
+                logger.debug("Begin arcpy.UploadServiceDefinition_server(%s, %s)", self.__sd_file_name, conn)
+                # TODO: Support the other options
+                arcpy.UploadServiceDefinition_server(self.__sd_file_name, conn)
+                logger.debug("arcpy.UploadServiceDefinition_server() complete")
+            except Exception as ex:
+                raise PublishException(ex.message)
 
     @staticmethod
     def __delete_file(path):
