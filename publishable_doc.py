@@ -11,9 +11,10 @@ class PublishException(Exception):
 
 
 class Doc(object):
-    def __init__(self, path, folder=None, server=None, config=None):
-        logger.debug("Doc.__init__(path=%s, folder=%s, server=%s, config=%s",
-                     path, folder, server, config)
+    def __init__(self, path, folder=None, server=None, server_url=None, config=None):
+        logger.debug("Doc.__init__(path=%s, folder=%s, server=%s, server_url=%s, config=%s",
+                     path, folder, server, server_url, config)
+        self.server_url = server_url
         self.__config = config
         self.__basename = None
         self.__ext = None
@@ -270,8 +271,20 @@ class Doc(object):
         Requires parsing the server URl out of the binary *.ags file, or a server URL from config
         Need to use AGS Rest API (http://resources.arcgis.com/en/help/rest/apiref/index.html)
         """
-        logger.debug("Check if %s exists on the server", self.service_path)
+        logger.debug("Check if %s exists on the server %s", self.service_path, self.server_url)
+        if self.server_url is None:
+            if self.__service_connection_file_path is not None:
+                logger.debug("Server URL is undefined. Trying to get from connection file")
+                self.server_url = self.__service_url_from_ags(self.__service_connection_file_path)
+        if self.server_url is None:
+            logger.debug("Server URL is undefined. Assume service exists")
+            return True
         # TODO: Implement
+        # use requests to get services from:
+        # self.server_url + '/rest/services?f=json' if self.__service_folder_name is None
+        # or self.server_url + '/rest/services/' + self.__service_folder_name + '?f=json'
+        # JSON response is like: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
+        return True
 
     def __analyze_draft_service_definition(self):
         """Analyze a Service Definition Draft (.sddraft) files for readiness to publish
@@ -393,6 +406,34 @@ class Doc(object):
             os.remove(path)
         except Exception:
             raise PublishException('Unable to delete {0}'.format(path))
+
+    @staticmethod
+    def __service_url_from_ags(path):
+        """find and return the first 'URL' string in the binary file at path
+
+        The ags file is sometimes (always?) utf16, so remove all null bytes for simple string searches"""
+        url_start = 'http'
+        url_end = '/arcgis'
+        result = set([])
+        with open(path, 'rb') as f:
+            text = f.read()
+            text = text.replace(b'\x00', '')
+            # print(text)
+            start_index = 0
+            while 0 <= start_index:
+                start_index = text.find(url_start, start_index)
+                # print('start_index', start_index)
+                if 0 <= start_index:
+                    end_index = text.find(url_end, start_index)
+                    # print('end_index', end_index)
+                    if 0 <= end_index:
+                        url = text[start_index:end_index] + url_end
+                        result.add(url)
+                        start_index = end_index
+        if len(result) == 1:
+            return list(result)[0]
+        else:
+            return None
 
 
 # Testing
