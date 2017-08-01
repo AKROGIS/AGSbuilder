@@ -181,14 +181,6 @@ class Doc(object):
             return None
         return self.__draft_analysis_result['errors']
 
-    @property
-    def sd_file(self):
-        # TODO: this may not be required
-        if self.__have_service_definition:
-            return self.__sd_file_name
-        else:
-            return None
-
     def publish(self):
         # TODO: Implement
         pass
