@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os.path
 import logging
 import requests
+from io import open  # for python2/3 compatibility
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -425,13 +426,13 @@ class Doc(object):
     def __service_url_from_ags(path):
         """find and return the first 'URL' string in the binary file at path
 
-        The ags file is sometimes (always?) utf16, so remove all null bytes for simple string searches"""
+        The ags file is in utf16, so decode properly to do string searches"""
         url_start = 'http'
         url_end = '/arcgis'
         result = set([])
         with open(path, 'rb') as f:
-            text = f.read()
-            text = text.replace(b'\x00', '')
+            data = f.read()
+            text = data.decode('utf16')
             # print(text)
             start_index = 0
             while 0 <= start_index:
