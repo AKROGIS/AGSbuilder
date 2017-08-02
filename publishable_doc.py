@@ -285,17 +285,30 @@ class Doc(object):
         if self.server_url is None:
             logger.debug("Server URL is undefined. Assume service exists")
             return True
-        if self.__service_folder_name is None:
-            url = self.server_url + '/rest/services?f=json'
-        else:
-            url = self.server_url + '/rest/services/' + self.__service_folder_name + '?f=json'
+
+        url = self.server_url + '/rest/services?f=json'
+        if self.__service_folder_name is not None:
+            # Check if the folder is valid
+            try:
+                json = requests.get(url).json()
+                # sample response: {..., "folders":["folder1","folder2"], ...}
+                folders = [folder.lower() for folder in json['folders']]
+            except Exception as ex:
+                logger.warn("Failed to check for service, %s. Assume service exists", ex.message)
+                return True
+            logger.debug("folders found: %s", folders)
+            if self.__service_folder_name.lower() in folders:
+                url = self.server_url + '/rest/services/' + self.__service_folder_name + '?f=json'
+            else:
+                logger.debug("folder was not found on server, so service does not exist yet")
+                return False
         logger.debug("looking for services at: %s", url)
         try:
             json = requests.get(url).json()
             # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
             services = [service['name'].lower() for service in json['services']]
         except Exception as ex:
-            logger.debug("Failed to check for service, %s. Assume service exists", ex.message)
+            logger.warn("Failed to check for service, %s. Assume service exists", ex.message)
             return True
 
         logger.debug("services found: %s", services)
