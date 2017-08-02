@@ -198,6 +198,7 @@ class Doc(object):
         """
         logger.debug("Stop and Remove %s", self.service_path)
         # TODO: Implement
+        logger.warn("Unpublish not implemented.")
 
     @property
     def is_live(self):
