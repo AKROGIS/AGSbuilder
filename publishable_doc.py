@@ -374,7 +374,6 @@ class Doc(object):
                 if desc.hasChildNodes():
                     desc.firstChild.data = new_type
 
-        # FIXME: provide python2 and python3 varieties
         with open(file_name, u'w') as f:
             xdoc.writexml(f)
 
