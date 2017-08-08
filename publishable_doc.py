@@ -330,7 +330,7 @@ class Doc(object):
             return
         import arcpy
         try:
-            self.__draft_analysis_result = arcpy.mapping.AnalyzeForSD(r"C:\Project\Counties.sddraft")
+            self.__draft_analysis_result = arcpy.mapping.AnalyzeForSD(self.__draft_file_name)
         except Exception as ex:
             PublishException('Unable to analyze draft service definition: %s', ex.message)
 
