@@ -178,12 +178,23 @@ class Doc(object):
                 self.__analyze_draft_service_definition()
             except PublishException as ex:
                 logger.warn("Unable to analyze the service: %s", ex.message)
-                return False
+
         if not self.__draft_analysis_result:
-            return False
-        if 0 == len(self.__draft_analysis_result['errors']):
-            return None
-        return self.__draft_analysis_result['errors']
+            return "Unable to get issues"
+
+        text = ''
+        for key in ('messages', 'warnings', 'errors'):
+            if key in self.__draft_analysis_result:
+                issues = self.__draft_analysis_result[key]
+                if 0 < len(issues):
+                    text += key.upper() + '\n-------------------------\n'
+                    for ((message, code), layerlist) in issues.items():
+                        text += '  {0} (code {1})\n'.format(message, code)
+                        if 0 < len(layerlist):
+                            layer_names = ','.join([layer.longName for layer in layerlist])
+                            text += '    applies to layers: {0}\n'.format(layer_names)
+
+        return text
 
     def publish(self):
         self.__publish_service()
@@ -654,7 +665,7 @@ def test_publish():
     print('Local name:', doc.name, '|    Service path:', doc.service_path)
     if not doc.is_publishable:
         print('Not ready to publish!')
-        print('Publish Issues', doc.issues)
+    print(doc.issues)
     else:
         print('Ready to publish.')
         try:
