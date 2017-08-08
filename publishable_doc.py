@@ -339,7 +339,7 @@ class Doc(object):
             self.__draft_analysis_result = arcpy.mapping.AnalyzeForSD(self.__draft_file_name)
             logger.info("Done arcpy.mapping.AnalyzeForSD()")
         except Exception as ex:
-            PublishException('Unable to analyze draft service definition: %s', ex.message)
+            raise PublishException('Unable to analyze draft service definition: %s', ex.message)
 
     def __create_service_definition(self, force=False):
         """Converts a service definition draft (.sddraft) into a service definition
@@ -353,7 +353,7 @@ class Doc(object):
             self.__delete_file(self.__sd_file_name)
 
         if not self.is_publishable:
-            PublishException("Service Definition Draft has issues and is not ready to publish")
+            raise PublishException("Service Definition Draft has issues and is not ready to publish")
 
         if not self.__have_service_definition:
             try:
@@ -364,7 +364,7 @@ class Doc(object):
                 self.__have_service_definition = True
                 self.__have_new_service_definition = True
             except Exception as ex:
-                PublishException('Unable to analyze draft service definition: %s', ex.message)
+                raise PublishException('Unable to analyze draft service definition: %s', ex.message)
 
     def __create_replacement_service_draft(self):
         """Modify the service definition draft to overwrite the existing service
@@ -422,7 +422,7 @@ class Doc(object):
         if not self.__have_service_definition:
             self.__create_service_definition(force=force)
         if not self.__have_service_definition:
-            PublishException("Service Definition (*.sd) file is not ready to publish")
+            raise PublishException("Service Definition (*.sd) file is not ready to publish")
 
         if self.__service_connection_file_path is None:
             # conn = ' '.join([word.capitalize() for word in self.__service_server_type.split('_')])
