@@ -151,10 +151,8 @@ class Doc(object):
 
         :return: Bool
         """
-        if not self.__is_image_service and os.path.exists(self.__sd_file_name):
-            src_mtime = os.path.getmtime(self.path)
-            dst_mtime = os.path.getmtime(self.__sd_file_name)
-            if src_mtime < dst_mtime:
+        if not self.__is_image_service:
+            if self.__file_exists_and_is_newer(self.__sd_file_name, self.path):
                 logger.debug("Service definition is newer than source, ready to publish.")
                 self.__have_service_definition = True
                 return True
@@ -237,18 +235,13 @@ class Doc(object):
         if not os.path.exists(self.path):
             raise PublishException('This document cannot be published.  The source file is missing.')
 
+        if not force and self.__file_exists_and_is_newer(self.__draft_file_name, self.path):
+            logger.info("sddraft is newer than source document, skipping create")
+            self.__have_draft = True
+            return
+
         if os.path.exists(self.__draft_file_name):
-            if force:
-                self.__delete_file(self.__draft_file_name)
-            else:
-                src_mtime = os.path.getmtime(self.path)
-                dst_mtime = os.path.getmtime(self.__draft_file_name)
-                if src_mtime < dst_mtime:
-                    logger.info("sddraft is newer than source document, skipping.")
-                    self.__have_draft = True
-                    return
-                else:
-                    self.__delete_file(self.__draft_file_name)
+            self.__delete_file(self.__draft_file_name)
 
         import arcpy
 
@@ -447,6 +440,20 @@ class Doc(object):
             os.remove(path)
         except Exception:
             raise PublishException('Unable to delete {0}'.format(path))
+
+    @staticmethod
+    def __file_exists_and_is_newer(new_file, old_file):
+        try:
+            if not os.path.exists(new_file):
+                return False
+            if not os.path.exists(old_file):
+                return True
+            old_mtime = os.path.getmtime(old_file)
+            new_mtime = os.path.getmtime(new_file)
+            return old_mtime < new_mtime
+        except Exception as ex:
+            logger.warn("Exception raised checking for file A newer than file B: %s", ex.message)
+            return False
 
     @staticmethod
     def __service_url_from_ags(path):
