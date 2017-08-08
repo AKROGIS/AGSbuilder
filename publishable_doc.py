@@ -260,10 +260,12 @@ class Doc(object):
                 PublishException(ex.message)
 
         try:
+            logger.info("Begin arcpy.createSDDraft(%s)", self.path)
             r = create_sddraft(source, self.__draft_file_name, self.__service_name,
                                self.__service_server_type, self.__service_connection_file_path,
                                self.__service_copy_data_to_server, self.__service_folder_name,
                                self.__service_summary, self.__service_tags)
+            logger.info("Done arcpy.createSDDraft()")
             self.__draft_analysis_result = r
             self.__have_draft = True
         except Exception as ex:
@@ -328,9 +330,11 @@ class Doc(object):
         if not self.__have_draft:
             logger.error('Unable to get a draft service definition to analyze')
             return
-        import arcpy
         try:
+            import arcpy
+            logger.info("Begin arcpy.mapping.AnalyzeForSD(%s)", self.__draft_file_name)
             self.__draft_analysis_result = arcpy.mapping.AnalyzeForSD(self.__draft_file_name)
+            logger.info("Done arcpy.mapping.AnalyzeForSD()")
         except Exception as ex:
             PublishException('Unable to analyze draft service definition: %s', ex.message)
 
@@ -351,7 +355,9 @@ class Doc(object):
         if not self.__have_service_definition:
             try:
                 import arcpy
+                logger.info("Begin arcpy.StageService_server(%s, %s)", self.__draft_file_name, self.__sd_file_name)
                 arcpy.StageService_server(self.__draft_file_name, self.__sd_file_name)
+                logger.info("Done arcpy.StageService_server()")
                 self.__have_service_definition = True
                 self.__have_new_service_definition = True
             except Exception as ex:
@@ -379,10 +385,15 @@ class Doc(object):
             xdoc.writexml(f)
 
     def __publish_service(self, force=False):
+        # TODO: Support the optional parameters to UploadServiceDefinition_server
+
         """Publish Service Definition
 
         Uploads and publishes a GIS service to a specified GIS server based on a staged service definition (.sd) file.
         http://desktop.arcgis.com/en/arcmap/latest/tools/server-toolbox/upload-service-definition.htm
+
+        arcpy.UploadServiceDefinition_server (in_sd_file, in_server, {in_service_name}, {in_cluster}, {in_folder_type},
+           {in_folder}, {in_startupType}, {in_override}, {in_my_contents}, {in_public}, {in_organization}, {in_groups})
 
         server can be one of the following
         A name of a server connection in ArcCatalog; i.e. server = r'GIS Servers/arcgis on my_server (publisher)'
@@ -420,10 +431,9 @@ class Doc(object):
         if force or not self.is_live or self.__have_new_service_definition:
             try:
                 import arcpy
-                logger.debug("Begin arcpy.UploadServiceDefinition_server(%s, %s)", self.__sd_file_name, conn)
-                # TODO: Support the other options
+                logger.info("Begin arcpy.UploadServiceDefinition_server(%s, %s)", self.__sd_file_name, conn)
                 arcpy.UploadServiceDefinition_server(self.__sd_file_name, conn)
-                logger.debug("arcpy.UploadServiceDefinition_server() complete")
+                logger.info("Done arcpy.UploadServiceDefinition_server()")
             except Exception as ex:
                 raise PublishException(ex.message)
 
