@@ -45,6 +45,7 @@ class Doc(object):
         self.__draft_analysis_result = None
         self.__have_service_definition = False
         self.__have_new_service_definition = False
+        self.__service_is_live = None
 
     @property
     def path(self):
@@ -202,7 +203,9 @@ class Doc(object):
 
     @property
     def is_live(self):
-        return self.__service_is_live()
+        if self.__service_is_live is None:
+            self.__service_is_live = self.__check_server_for_service()
+        return self.__service_is_live
 
     @staticmethod
     def __sanitize_service_name(name, replacement='_'):
@@ -274,7 +277,7 @@ class Doc(object):
         if self.is_live:
             self.__create_replacement_service_draft()
 
-    def __service_is_live(self):
+    def __check_server_for_service(self):
         """Check if this source is already published on the server
 
         Requires parsing the server URl out of the binary *.ags file, or a server URL from config
