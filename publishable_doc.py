@@ -368,6 +368,8 @@ class Doc(object):
         self.__cache_analysis_results()
 
     def __cache_analysis_results(self):
+        # FIXME: self.__draft_analysis_result is not expressible as JSON (keys must be a string)
+        # FIXME: keys are a tuple, layer is an object {"warning":{("text",code):[layer, layer, ...]}
         if self.__draft_analysis_result:
             try:
                 import json
@@ -402,6 +404,7 @@ class Doc(object):
                 raise PublishException('Unable to analyze draft service definition: %s', ex.message)
 
     def __create_replacement_service_draft(self):
+        # FIXME: This is not always called when needed
         """Modify the service definition draft to overwrite the existing service
 
         The existing draft file is overwritten.
@@ -420,6 +423,10 @@ class Doc(object):
                     desc.firstChild.data = new_type
 
         with open(file_name, u'w') as f:
+            # FIXME: expecting unicode, got a string
+            #   File "C:\Python27\ArcGIS10.5\lib\xml\dom\minidom.py", line 1745, in writexml
+            #     writer.write('<?xml version="1.0" ?>'+newl)
+            #   TypeError: write() argument 1 must be unicode, not str
             xdoc.writexml(f)
 
     def __publish_service(self, force=False):
