@@ -639,9 +639,23 @@ def test_service_check():
     assert alive
 
 
+def test_publish():
+    doc = Doc(r'c:\tmp\ags_test\test\survey.mxd', folder='test', server=r'c:\tmp\ags_test\ais_admin.ags')
+    print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    if not doc.is_publishable:
+        print('Publish Issues', doc.issues)
+    else:
+        print('Is ready to publish?', )
+        try:
+            doc.publish()
+            print("Published!!")
+        except PublishException as ex:
+            print("Failed to publish", ex.message)
+
 if __name__ == '__main__':
     logger.addHandler(logging.StreamHandler())
     # logger.setLevel(logging.DEBUG)
     test_path_folder_input()
     test_server_input()
     test_service_check()
+    test_publish()
