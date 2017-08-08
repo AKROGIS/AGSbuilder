@@ -22,6 +22,7 @@ class Doc(object):
         self.__ext = None
         self.__draft_file_name = None
         self.__sd_file_name = None
+        self.__issues_file_name = None
         self.__is_image_service = False
         self.__path = None
         self.path = path
@@ -66,6 +67,7 @@ class Doc(object):
                 # TODO: This will not work for image services
                 self.__draft_file_name = base + '.sddraft'
                 self.__sd_file_name = base + '.sd'
+                self.__issues_file_name = base + '.issues.json'
             else:
                 logger.warn('Path (%s) Not found. This is an invalid document.', new_value)
         except TypeError:
@@ -173,6 +175,21 @@ class Doc(object):
 
     @property
     def issues(self):
+        """Provide a list of errors, warning and messages about publishing this document
+
+        The issues are created when a draft file is created or re-analyzed.
+        Since the draft file is deleted when a sd file is created, the analysis results are
+        cached.  The cached copy is used if the sd file is newer than the map.
+        If there is not cached copy, or the sd file is out of date, the draft file will be created or re-analyzed."""
+        if not self.__draft_analysis_result:
+            if self.__file_exists_and_is_newer(self.__issues_file_name, self.path):
+                try:
+                    import json
+                    with open(self.__issues_file_name, 'r') as f:
+                        self.__draft_analysis_result = json.load(f)
+                except Exception as ex:
+                    logger.warn('Unable to load or parse the cached analysis results %s', ex.message)
+
         if not self.__draft_analysis_result:
             try:
                 self.__analyze_draft_service_definition()
@@ -275,6 +292,7 @@ class Doc(object):
             logger.info("Done arcpy.createSDDraft()")
             self.__draft_analysis_result = r
             self.__have_draft = True
+            self.__cache_analysis_results()
         except Exception as ex:
             raise PublishException(ex.message)
 
@@ -337,6 +355,9 @@ class Doc(object):
         if not self.__have_draft:
             logger.error('Unable to get a draft service definition to analyze')
             return
+        # If we created a new draft service definition, then we have results.
+        if self.__draft_analysis_result is not None:
+            return
         try:
             import arcpy
             logger.info("Begin arcpy.mapping.AnalyzeForSD(%s)", self.__draft_file_name)
@@ -344,6 +365,16 @@ class Doc(object):
             logger.info("Done arcpy.mapping.AnalyzeForSD()")
         except Exception as ex:
             raise PublishException('Unable to analyze draft service definition: %s', ex.message)
+        self.__cache_analysis_results()
+
+    def __cache_analysis_results(self):
+        if self.__draft_analysis_result:
+            try:
+                import json
+                with open(self.__issues_file_name, 'w') as f:
+                    f.write(json.dumps(self.__draft_analysis_result))
+            except Exception as ex:
+                logger.warn("Unable to cache the analysis results: %s", ex.message)
 
     def __create_service_definition(self, force=False):
         """Converts a service definition draft (.sddraft) into a service definition
@@ -663,9 +694,9 @@ def test_service_check():
 def test_publish():
     doc = Doc(r'c:\tmp\ags_test\test\survey.mxd', folder='test', server=r'c:\tmp\ags_test\ais_admin.ags')
     print('Local name:', doc.name, '|    Service path:', doc.service_path)
+    print(doc.issues)
     if not doc.is_publishable:
         print('Not ready to publish!')
-    print(doc.issues)
     else:
         print('Ready to publish.')
         try:
