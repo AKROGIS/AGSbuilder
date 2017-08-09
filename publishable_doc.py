@@ -334,10 +334,9 @@ class Doc(object):
     def __analyze_draft_service_definition(self):
         """Analyze a Service Definition Draft (.sddraft) files for readiness to publish
 
+        If asked to analyze the file, ignore any existing cached analysis results
         http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/analyzeforsd.htm
         """
-        if self.__draft_analysis_result is not None:
-            return
 
         if not self.__have_draft:
             self.__create_draft_service_definition()
