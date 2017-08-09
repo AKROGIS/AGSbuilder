@@ -283,7 +283,7 @@ class Doc(object):
             self.__have_draft = True
             self.__simplify_and_cache_analysis_results()
         except Exception as ex:
-            raise PublishException(ex.message)
+            raise PublishException('Unable to create the draft service definition file: {0}'.format(ex.message))
 
         if self.is_live:
             self.__create_replacement_service_draft()
@@ -352,7 +352,7 @@ class Doc(object):
             self.__draft_analysis_result = arcpy.mapping.AnalyzeForSD(self.__draft_file_name)
             logger.info("Done arcpy.mapping.AnalyzeForSD()")
         except Exception as ex:
-            raise PublishException('Unable to analyze draft service definition: %s', ex.message)
+            raise PublishException('Unable to analyze the draft service definition file: {0}'.format(ex.message))
         self.__simplify_and_cache_analysis_results()
 
     def __simplify_and_cache_analysis_results(self):
@@ -420,7 +420,7 @@ class Doc(object):
             self.__delete_file(self.__sd_file_name)
 
         if not self.is_publishable:
-            raise PublishException("Service Definition Draft has issues and is not ready to publish")
+            raise PublishException("Draft Service Definition has issues and is not ready to publish")
 
         if not self.__have_service_definition:
             try:
@@ -431,7 +431,7 @@ class Doc(object):
                 self.__have_service_definition = True
                 self.__have_new_service_definition = True
             except Exception as ex:
-                raise PublishException('Unable to stage the service definition file: %s', ex.message)
+                raise PublishException('Unable to create the service definition file: {0}'.format(ex.message))
 
     def __create_replacement_service_draft(self):
         """Modify the service definition draft to overwrite the existing service
@@ -444,6 +444,8 @@ class Doc(object):
 
         new_type = 'esriServiceDefinitionType_Replacement'
         file_name = self.__draft_file_name
+        import shutil
+        shutil.copyfile(file_name, file_name+'.old')
 
         xdoc = dom.parse(file_name)
         descriptions = xdoc.getElementsByTagName('Type')
@@ -511,7 +513,7 @@ class Doc(object):
                 arcpy.UploadServiceDefinition_server(self.__sd_file_name, conn)
                 logger.info("Done arcpy.UploadServiceDefinition_server()")
             except Exception as ex:
-                raise PublishException(ex.message)
+                raise PublishException('Unable to upload the service: {0}'.format(ex.message))
 
     @staticmethod
     def __delete_file(path):
