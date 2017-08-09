@@ -48,6 +48,8 @@ class Doc(object):
         self.__have_new_service_definition = False
         self.__service_is_live = None
 
+    # Read/Write Properties
+
     @property
     def path(self):
         return self.__path
@@ -91,18 +93,6 @@ class Doc(object):
             self.__folder = None
 
     @property
-    def name(self):
-        if self.folder is not None and self.__basename is not None:
-            return self.folder + '/' + self.__basename
-        return self.__basename
-
-    @property
-    def service_path(self):
-        if self.__service_folder_name is not None and self.__service_name is not None:
-            return self.__service_folder_name + '/' + self.__service_name
-        return self.__service_name
-
-    @property
     def server(self):
         if self.__service_server_type == 'MY_HOSTED_SERVICES':
             return self.__service_server_type
@@ -139,6 +129,26 @@ class Doc(object):
 
         logger.debug('Setting document %s service_server_type to %s and service_connection_file_path to %s',
                      self.name, self.__service_server_type, self.__service_connection_file_path)
+
+    # Read Only Properties
+
+    @property
+    def name(self):
+        if self.folder is not None and self.__basename is not None:
+            return self.folder + '/' + self.__basename
+        return self.__basename
+
+    @property
+    def service_path(self):
+        if self.__service_folder_name is not None and self.__service_name is not None:
+            return self.__service_folder_name + '/' + self.__service_name
+        return self.__service_name
+
+    @property
+    def is_live(self):
+        if self.__service_is_live is None:
+            self.__service_is_live = self.__check_server_for_service()
+        return self.__service_is_live
 
     @property
     def is_publishable(self):
@@ -202,6 +212,8 @@ class Doc(object):
 
         return self.__stringify_analysis_results()
 
+    # Public Methods
+
     def publish(self):
         self.__publish_service()
 
@@ -216,25 +228,7 @@ class Doc(object):
         # TODO: Implement
         logger.warn("Unpublish not implemented.")
 
-    @property
-    def is_live(self):
-        if self.__service_is_live is None:
-            self.__service_is_live = self.__check_server_for_service()
-        return self.__service_is_live
-
-    @staticmethod
-    def __sanitize_service_name(name, replacement='_'):
-        """Replace all non alphanumeric characters with replacement
-
-        The name can only contain alphanumeric characters and underscores.
-        No spaces or special characters are allowed.
-        The name cannot be more than 120 characters in length.
-        http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm"""
-
-        if name is None:
-            return None
-        clean_chars = [c if c.isalnum() else replacement for c in name]
-        return ''.join(clean_chars)[:120]
+    # Private Methods
 
     def __create_draft_service_definition(self, force=False):
         """Create a service definition draft from a mxd/lyr
@@ -515,6 +509,8 @@ class Doc(object):
             except Exception as ex:
                 raise PublishException('Unable to upload the service: {0}'.format(ex.message))
 
+    # Private Class Methods
+
     @staticmethod
     def __delete_file(path):
         if not os.path.exists(path):
@@ -538,6 +534,20 @@ class Doc(object):
         except Exception as ex:
             logger.warn("Exception raised checking for file A newer than file B: %s", ex.message)
             return False
+
+    @staticmethod
+    def __sanitize_service_name(name, replacement='_'):
+        """Replace all non alphanumeric characters with replacement
+
+        The name can only contain alphanumeric characters and underscores.
+        No spaces or special characters are allowed.
+        The name cannot be more than 120 characters in length.
+        http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm"""
+
+        if name is None:
+            return None
+        clean_chars = [c if c.isalnum() else replacement for c in name]
+        return ''.join(clean_chars)[:120]
 
     @staticmethod
     def __service_url_from_ags(path):
