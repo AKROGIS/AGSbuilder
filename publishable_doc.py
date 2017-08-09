@@ -459,9 +459,6 @@ class Doc(object):
                     desc.firstChild.data = new_type
 
         with open(file_name, u'wb') as f:
-            #   File "C:\Python27\ArcGIS10.5\lib\xml\dom\minidom.py", line 1745, in writexml
-            #     writer.write('<?xml version="1.0" ?>'+newl)
-            #   TypeError: write() argument 1 must be unicode, not str
             xdoc.writexml(f)
         logger.debug("Draft file fixed.")
 
