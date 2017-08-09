@@ -427,7 +427,7 @@ class Doc(object):
                 self.__have_service_definition = True
                 self.__have_new_service_definition = True
             except Exception as ex:
-                raise PublishException('Unable to analyze draft service definition: %s', ex.message)
+                raise PublishException('Unable to stage the service definition file: %s', ex.message)
 
     def __create_replacement_service_draft(self):
         # FIXME: This is not always called when needed
