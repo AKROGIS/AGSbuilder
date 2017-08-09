@@ -182,13 +182,7 @@ class Doc(object):
         cached.  The cached copy is used if the sd file is newer than the map.
         If there is not cached copy, or the sd file is out of date, the draft file will be created or re-analyzed."""
         if not self.__draft_analysis_result:
-            if self.__file_exists_and_is_newer(self.__issues_file_name, self.path):
-                try:
-                    import json
-                    with open(self.__issues_file_name, 'r') as f:
-                        self.__draft_analysis_result = json.load(f)
-                except Exception as ex:
-                    logger.warn('Unable to load or parse the cached analysis results %s', ex.message)
+            self.__get_analysis_result_from_cache()
 
         if not self.__draft_analysis_result:
             try:
@@ -199,19 +193,7 @@ class Doc(object):
         if not self.__draft_analysis_result:
             return "Unable to get issues"
 
-        text = ''
-        for key in ('messages', 'warnings', 'errors'):
-            if key in self.__draft_analysis_result:
-                issues = self.__draft_analysis_result[key]
-                if 0 < len(issues):
-                    text += key.upper() + '\n-------------------------\n'
-                    for ((message, code), layerlist) in issues.items():
-                        text += '  {0} (code {1})\n'.format(message, code)
-                        if 0 < len(layerlist):
-                            layer_names = ','.join([layer.longName for layer in layerlist])
-                            text += '    applies to layers: {0}\n'.format(layer_names)
-
-        return text
+        return self.__stringify_analysis_results()
 
     def publish(self):
         self.__publish_service()
@@ -292,7 +274,7 @@ class Doc(object):
             logger.info("Done arcpy.createSDDraft()")
             self.__draft_analysis_result = r
             self.__have_draft = True
-            self.__cache_analysis_results()
+            self.__simplify_and_cache_analysis_results()
         except Exception as ex:
             raise PublishException(ex.message)
 
@@ -365,18 +347,60 @@ class Doc(object):
             logger.info("Done arcpy.mapping.AnalyzeForSD()")
         except Exception as ex:
             raise PublishException('Unable to analyze draft service definition: %s', ex.message)
-        self.__cache_analysis_results()
+        self.__simplify_and_cache_analysis_results()
 
-    def __cache_analysis_results(self):
-        # FIXME: self.__draft_analysis_result is not expressible as JSON (keys must be a string)
-        # FIXME: keys are a tuple, layer is an object {"warning":{("text",code):[layer, layer, ...]}
+    def __simplify_and_cache_analysis_results(self):
         if self.__draft_analysis_result:
+            self.__simplify_analysis_results()
             try:
                 import json
-                with open(self.__issues_file_name, 'w') as f:
+                with open(self.__issues_file_name, 'wb') as f:
                     f.write(json.dumps(self.__draft_analysis_result))
             except Exception as ex:
                 logger.warn("Unable to cache the analysis results: %s", ex.message)
+
+    def __get_analysis_result_from_cache(self):
+        if self.__file_exists_and_is_newer(self.__issues_file_name, self.path):
+            try:
+                import json
+                with open(self.__issues_file_name, 'rb') as f:
+                    self.__draft_analysis_result = json.load(f)
+            except Exception as ex:
+                logger.warn('Unable to load or parse the cached analysis results %s', ex.message)
+
+    def __simplify_analysis_results(self):
+        """self.__draft_analysis_result is not expressible as JSON (keys must be a string),
+        This fixes that, and makes it a little simpler to 'stringify' for reporting
+        input: {"warnings":{("msg",code):[layer, layer, ...]}
+        output: {"warnings":[{"name":str,"code":int,"layers":["name1", "name2",...]},...]}
+        """
+        simple_results = {}
+        for key in ('messages', 'warnings', 'errors'):
+            if key in self.__draft_analysis_result:
+                issue_list = []
+                issues = self.__draft_analysis_result[key]
+                for ((message, code), layerlist) in issues.items():
+                    issue = {'text': message,
+                             'code': code,
+                             'layers': [layer.longName for layer in layerlist]}
+                    issue_list.append(issue)
+                    simple_results[key] = issue_list
+        self.__draft_analysis_result = simple_results
+
+    def __stringify_analysis_results(self):
+        """This only works on the simplified version of the analysis results"""
+        text = ''
+        for key in ('messages', 'warnings', 'errors'):
+            if key in self.__draft_analysis_result:
+                issues = self.__draft_analysis_result[key]
+                if 0 < len(issues):
+                    text += key.upper() + '\n-------------------------\n'
+                    for issue in issues:
+                        text += '  {0} (code {1})\n'.format(issue['text'], issue['code'])
+                        layers = issue['layers']
+                        if 0 < len(layers):
+                            text += '    applies to layers: {0}\n'.format(','.join(layers))
+        return text
 
     def __create_service_definition(self, force=False):
         """Converts a service definition draft (.sddraft) into a service definition
