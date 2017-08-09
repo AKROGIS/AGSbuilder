@@ -434,12 +434,12 @@ class Doc(object):
                 raise PublishException('Unable to stage the service definition file: %s', ex.message)
 
     def __create_replacement_service_draft(self):
-        # FIXME: This is not always called when needed
         """Modify the service definition draft to overwrite the existing service
 
         The existing draft file is overwritten.
         Need to check if this is required before calling.
         """
+        logger.debug("Fixing draft file %s for replacement", self.__draft_file_name)
         import xml.dom.minidom as dom
 
         new_type = 'esriServiceDefinitionType_Replacement'
@@ -450,6 +450,7 @@ class Doc(object):
         for desc in descriptions:
             if desc.parentNode.tagName == 'SVCManifest':
                 if desc.hasChildNodes():
+                    logger.debug("Update tag %s from %s to %s", desc.firstChild, desc.firstChild.data, new_type)
                     desc.firstChild.data = new_type
 
         with open(file_name, u'wb') as f:
@@ -457,6 +458,7 @@ class Doc(object):
             #     writer.write('<?xml version="1.0" ?>'+newl)
             #   TypeError: write() argument 1 must be unicode, not str
             xdoc.writexml(f)
+        logger.debug("Draft file fixed.")
 
     def __publish_service(self, force=False):
         # TODO: Support the optional parameters to UploadServiceDefinition_server
