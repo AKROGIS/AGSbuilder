@@ -168,7 +168,7 @@ class Doc(object):
         if not self.__draft_analysis_result:
             logger.warn("Unable to analyze service definition draft, NOT ready to publish.")
             return False
-        if 0 < len(self.__draft_analysis_result['errors']):
+        if 'errors' in self.__draft_analysis_result and 0 < len(self.__draft_analysis_result['errors']):
             logger.debug("Service definition draft has errors, NOT ready to publish.")
             return False
         return True
