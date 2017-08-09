@@ -159,6 +159,11 @@ class Doc(object):
                 self.__have_service_definition = True
                 return True
 
+        # I need to create a sd file, so I need to check for/create a draft file
+        if not self.__file_exists_and_is_newer(self.__draft_file_name, self.path):
+            self.__create_draft_service_definition()
+
+        # I may have a draft file, but it may not be publishable, make sure I have analysis results.
         if self.__draft_analysis_result is None:
             try:
                 self.__analyze_draft_service_definition()
