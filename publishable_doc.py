@@ -423,6 +423,9 @@ class Doc(object):
             raise PublishException("Draft Service Definition has issues and is not ready to publish")
 
         if not self.__have_service_definition:
+            # I do not have a service definition that is newer than the map/draft, but I might have an old version
+            # the arcpy method will fail if the sd file exists
+            self.__delete_file(self.__sd_file_name)
             try:
                 import arcpy
                 logger.info("Begin arcpy.StageService_server(%s, %s)", self.__draft_file_name, self.__sd_file_name)
@@ -517,6 +520,8 @@ class Doc(object):
 
     @staticmethod
     def __delete_file(path):
+        if not os.path.exists(path):
+            return
         try:
             logger.debug("deleting %s", path)
             os.remove(path)
