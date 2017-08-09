@@ -159,15 +159,17 @@ class Doc(object):
                 self.__have_service_definition = True
                 return True
 
-        if not self.__draft_analysis_result:
+        if self.__draft_analysis_result is None:
             try:
                 self.__analyze_draft_service_definition()
             except PublishException as ex:
                 logger.warn("Unable to analyze the service: %s", ex.message)
                 return False
-        if not self.__draft_analysis_result:
+
+        if self.__draft_analysis_result is None:
             logger.warn("Unable to analyze service definition draft, NOT ready to publish.")
             return False
+
         if 'errors' in self.__draft_analysis_result and 0 < len(self.__draft_analysis_result['errors']):
             logger.debug("Service definition draft has errors, NOT ready to publish.")
             return False
@@ -181,16 +183,16 @@ class Doc(object):
         Since the draft file is deleted when a sd file is created, the analysis results are
         cached.  The cached copy is used if the sd file is newer than the map.
         If there is not cached copy, or the sd file is out of date, the draft file will be created or re-analyzed."""
-        if not self.__draft_analysis_result:
+        if self.__draft_analysis_result is None:
             self.__get_analysis_result_from_cache()
 
-        if not self.__draft_analysis_result:
+        if self.__draft_analysis_result is None:
             try:
                 self.__analyze_draft_service_definition()
             except PublishException as ex:
                 logger.warn("Unable to analyze the service: %s", ex.message)
 
-        if not self.__draft_analysis_result:
+        if self.__draft_analysis_result is None:
             return "Unable to get issues"
 
         return self.__stringify_analysis_results()
@@ -350,7 +352,7 @@ class Doc(object):
         self.__simplify_and_cache_analysis_results()
 
     def __simplify_and_cache_analysis_results(self):
-        if self.__draft_analysis_result:
+        if self.__draft_analysis_result is not None:
             self.__simplify_analysis_results()
             try:
                 import json
