@@ -441,8 +441,6 @@ class Doc(object):
 
         new_type = 'esriServiceDefinitionType_Replacement'
         file_name = self.__draft_file_name
-        import shutil
-        shutil.copyfile(file_name, file_name+'.old')
 
         xdoc = dom.parse(file_name)
         descriptions = xdoc.getElementsByTagName('Type')
