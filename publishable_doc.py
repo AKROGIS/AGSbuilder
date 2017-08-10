@@ -200,7 +200,7 @@ class Doc(object):
         return True
 
     @property
-    def issues(self):
+    def all_issues(self):
         """Provide a list of errors, warning and messages about publishing this document
 
         The issues are created when a draft file is created or re-analyzed.
@@ -217,9 +217,20 @@ class Doc(object):
                 logger.warn("Unable to analyze the service: %s", ex.message)
 
         if self.__draft_analysis_result is None:
-            return "Unable to get issues"
+            error = 'ERRORS:\n  '
+            if self.path is None:
+                return error + "Path to service source is not valid"
+            else:
+                return error + "Unable to get issues"
 
         return self.__stringify_analysis_results()
+
+    @property
+    def errors(self):
+        issues = self.all_issues
+        if 'ERRORS:' not in issues:
+            return ''
+        return issues.split('ERRORS:')[1]
 
     # Public Methods
 
@@ -403,7 +414,7 @@ class Doc(object):
             if key in self.__draft_analysis_result:
                 issues = self.__draft_analysis_result[key]
                 if 0 < len(issues):
-                    text += key.upper() + '\n-------------------------\n'
+                    text += key.upper() + ':\n'
                     for issue in issues:
                         text += '  {0} (code {1})\n'.format(issue['text'], issue['code'])
                         layers = issue['layers']
@@ -753,9 +764,10 @@ def test_service_check():
 def test_publish():
     doc = Doc(r'c:\tmp\ags_test\test\survey.mxd', folder='test', server=r'c:\tmp\ags_test\ais_admin.ags')
     print('Local name:', doc.name, '|    Service path:', doc.service_path)
-    print(doc.issues)
+    print(doc.all_issues)
     if not doc.is_publishable:
         print('Not ready to publish!')
+        print(doc.errors)
     else:
         print('Ready to publish.')
         try:
