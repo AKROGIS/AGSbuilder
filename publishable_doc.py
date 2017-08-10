@@ -531,9 +531,9 @@ class Doc(object):
     @staticmethod
     def __file_exists_and_is_newer(new_file, old_file):
         try:
-            if not os.path.exists(new_file):
+            if new_file is None or not os.path.exists(new_file):
                 return False
-            if not os.path.exists(old_file):
+            if old_file is None or not os.path.exists(old_file):
                 return True
             old_mtime = os.path.getmtime(old_file)
             new_mtime = os.path.getmtime(new_file)
