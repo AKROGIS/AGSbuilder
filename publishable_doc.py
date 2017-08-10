@@ -56,6 +56,10 @@ class Doc(object):
                 self.server_url = self.__config.server_url
             except AttributeError:
                 self.server_url = None
+            if self.server_url is None:
+                if self.__service_connection_file_path is not None:
+                    logger.debug("Server URL is undefined. Trying to get from connection file")
+                    self.server_url = self.__service_url_from_ags(self.__service_connection_file_path)
 
     # Read/Write Properties
 
@@ -317,10 +321,6 @@ class Doc(object):
         Need to use AGS Rest API (http://resources.arcgis.com/en/help/rest/apiref/index.html)
         """
         logger.debug("Check if %s exists on the server %s", self.service_path, self.server_url)
-        if self.server_url is None:
-            if self.__service_connection_file_path is not None:
-                logger.debug("Server URL is undefined. Trying to get from connection file")
-                self.server_url = self.__service_url_from_ags(self.__service_connection_file_path)
         if self.server_url is None:
             logger.debug("Server URL is undefined. Assume service exists")
             return True
