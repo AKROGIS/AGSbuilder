@@ -23,6 +23,10 @@ def get_configuration_settings():
 
     # Ensure defaults exist to avoid AttributeErrors below
     config.root_directory = getattr(config, 'root_directory', None)
+    config.server = getattr(config, 'server', None)
+    config.server_url = getattr(config, 'server_url', None)
+    config.admin_username = getattr(config, 'admin_username', None)
+    config.admin_password = getattr(config, 'admin_password', None)
 
     import argparse
     parser = argparse.ArgumentParser(description='Syncs a set of ArcGIS Web Services with source documents')
@@ -33,6 +37,24 @@ def get_configuration_settings():
         parser.add_argument('root_directory', nargs='?', metavar='PATH', default=config.root_directory,
                             help=('The directory of documents to publish. '
                                   'The default is {0}').format(config.root_directory))
+    parser.add_argument('-s', '--server', default=config.server,
+                        help=('The server to publish to. Must be a path to a connection (*.ags) file, '
+                              'or MY_HOSTED_SERVICES (the default if None is provided). '
+                              'MY_HOSTED_SERVICES uses the Portal configured in ArcGIS Desktop Administrator and '
+                              'your windows credentials. '
+                              'The default is {0}').format(config.server))
+    parser.add_argument('--server_url', default=config.server_url,
+                        help=('The base URL to the server hosting the services. If None, '
+                              'it may be extracted from the *.ags file provided for SERVER. '
+                              'Used for checking on and removing services. '
+                              'The default is {0}').format(config.server_url))
+    parser.add_argument('-u', '--admin_username', default=config.admin_username,
+                        help=('The name of an admin account on the server hosting the services. '
+                              'Used for removing services. '
+                              'The default is {0}').format(config.admin_username))
+    parser.add_argument('-p', '--admin_password', default=config.admin_password,
+                        help=('The password for the admin account. '
+                              'If not provided, the value in config.py is used'))
     parser.add_argument('-v', '--verbose', action='store_true', help='Show informational messages.')
     parser.add_argument('--debug', action='store_true', help='Show extensive debugging messages.')
 
@@ -44,7 +66,10 @@ def get_configuration_settings():
     if args.debug:
         logger.parent.handlers[0].setLevel(logging.DEBUG)
         logger.debug("Started logging at DEBUG level")
+        redacted_password = args.admin_password
+        args.admin_password = 'XX_redacted_XX'
         logger.debug("Command line argument %s", args)
+        args.admin_password = redacted_password
 
     return args
 
