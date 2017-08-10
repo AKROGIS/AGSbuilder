@@ -16,7 +16,13 @@ class Doc(object):
     def __init__(self, path, folder=None, server=None, server_url=None, config=None):
         logger.debug("Doc.__init__(path=%s, folder=%s, server=%s, server_url=%s, config=%s",
                      path, folder, server, server_url, config)
-        self.server_url = server_url
+        if server_url is not None:
+            self.server_url = server_url
+        else:
+            try:
+                self.server_url = self.__config.server_url
+            except AttributeError:
+                self.server_url = None
         self.__config = config
         self.__basename = None
         self.__ext = None
@@ -783,4 +789,4 @@ if __name__ == '__main__':
     # test_path_folder_input()
     # test_server_input()
     # test_service_check()
-    test_publish()
+    # test_publish()
