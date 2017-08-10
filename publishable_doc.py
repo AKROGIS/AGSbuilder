@@ -16,13 +16,6 @@ class Doc(object):
     def __init__(self, path, folder=None, server=None, server_url=None, config=None):
         logger.debug("Doc.__init__(path=%s, folder=%s, server=%s, server_url=%s, config=%s",
                      path, folder, server, server_url, config)
-        if server_url is not None:
-            self.server_url = server_url
-        else:
-            try:
-                self.server_url = self.__config.server_url
-            except AttributeError:
-                self.server_url = None
         self.__config = config
         self.__basename = None
         self.__ext = None
@@ -40,13 +33,6 @@ class Doc(object):
         self.__service_copy_data_to_server = False
         self.__service_server_type = None
         self.__service_connection_file_path = None
-        if server is not None:
-            self.server = server
-        else:
-            try:
-                self.server = self.__config.server
-            except AttributeError:
-                self.server = None
         self.__service_summary = None  # or string
         self.__service_tags = None  # or string with comma separated tags
         self.__have_draft = False
@@ -54,6 +40,22 @@ class Doc(object):
         self.__have_service_definition = False
         self.__have_new_service_definition = False
         self.__service_is_live = None
+
+        if server is not None:
+            self.server = server
+        else:
+            try:
+                self.server = self.__config.server
+            except AttributeError:
+                self.server = None
+
+        if server_url is not None:
+            self.server_url = server_url
+        else:
+            try:
+                self.server_url = self.__config.server_url
+            except AttributeError:
+                self.server_url = None
 
     # Read/Write Properties
 
