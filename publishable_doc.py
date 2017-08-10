@@ -255,10 +255,42 @@ class Doc(object):
         This requires Rest API URL, Admin credentials and the AGS Rest API
         The ags connection file cannot by used with arcpy to admin the server
         ref: http://resources.arcgis.com/en/help/rest/apiref/index.html
+        of: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html
         """
-        logger.debug("Stop and Remove %s", self.service_path)
-        # TODO: Implement
-        logger.warn("Unpublish not implemented.")
+        # TODO: self.service_path is not valid if source path doesn't exist (typical case for delete)
+        logger.debug("Called unpublish %s on %s", self.service_path, self.server_url)
+        if self.server_url is None or self.service_path is None:
+            logger.warning("URL to server, or path to service is unknown. Can't unpublish.")
+            return
+
+        username = getattr(self.__config, 'admin_username', None)
+        password = getattr(self.__config, 'admin_password', None)
+        if username is None or password is None:
+            logger.warning("No credentials provided. Can't unpublish.")
+            return
+
+        service_type = self.__get_service_type()
+        if service_type is None:
+            logger.warning("Unable to find service on server. Can't unpublish.")
+            return
+
+        token = self.__get_token(self.server_url, username, password)
+        if token is None:
+            logger.warning("Unable to login to server. Can't unpublish.")
+            return
+
+        url = self.server_url + '/admin/services/' + self.service_path + '.' + service_type + '/delete'
+        data = {'f': 'json', 'token': token}
+        try:
+            response = requests.post(url, data=data)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as ex:
+            logger.error(ex)
+            raise PublishException('Failed to unpublish: {0}'.format(ex))
+        json_response = response.json()
+        logger.debug("Unpublish Response: %s", json_response)
+        # TODO: info or error Log response
+        # TODO: If folder is empty delete it?
 
     # Private Methods
 
@@ -535,6 +567,14 @@ class Doc(object):
             except Exception as ex:
                 raise PublishException('Unable to upload the service: {0}'.format(ex.message))
 
+    def __get_service_type(self):
+        # TODO: Implement
+        # if folder is None call /services?f=json
+        # else: call /services/folder?f=json if folder is in /services?f=json resp['folders']
+        # find service in response['services'] find service['serviceName'] = service, and grab the service['type']
+        # do case insensitive compares
+        return "Mapserver"
+
     # Private Class Methods
 
     @staticmethod
@@ -560,6 +600,37 @@ class Doc(object):
         except Exception as ex:
             logger.warn("Exception raised checking for file A newer than file B: %s", ex.message)
             return False
+
+    @staticmethod
+    def __get_token(url, username, password):
+        # TODO: use url/rest/info?f=json  resp['authInfo']['tokenServicesUrl'] + generateTokens
+        logger.debug("Generate admin token")
+        path = '/admin/generateToken'
+        # path = '/tokens/generateToken' requires https?
+        data = {'f': 'json',
+                'username': username,
+                'password': password,
+                'client': 'requestip',
+                'expiration': '60'}
+        try:
+            response = requests.post(url + path, data=data)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as ex:
+            logger.error(ex)
+            return None
+        json_response = response.json()
+        logger.debug("Login Response: %s", json_response)
+        try:
+            if 'token' in json_response:
+                return json_response['token']
+            if 'error' in json_response:
+                logger.debug('Server response: %s', json_response)
+                logger.error('%s (%s)', json_response['error']['message'], ';'.join(json_response['error']['details']))
+            else:
+                raise TypeError
+        except (TypeError, KeyError):
+            logger.error('Invalid server response while generating token: %s', json_response)
+        return None
 
     @staticmethod
     def __sanitize_service_name(name, replacement='_'):
