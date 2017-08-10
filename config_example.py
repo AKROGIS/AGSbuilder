@@ -34,5 +34,5 @@ unpublish feature will not be available.  If they are None or not provided,
 they can be provided on the command line.
 They must be None, or quoted text
 """
-admin_username = None
-admin_password = None
+admin_username = 'bigwig'
+admin_password = 'secret'
