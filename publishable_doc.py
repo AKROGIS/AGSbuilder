@@ -24,12 +24,13 @@ class Doc(object):
         self.__sd_file_name = None
         self.__issues_file_name = None
         self.__is_image_service = False
-        self.__path = None
+        # All instance attributes should be defined in __init__() (even if they are set in a property setter)
+        self.__path = None  # (re)set in path.setter
+        self.__service_name = None  # (re)set in path.setter
         self.path = path
-        self.__folder = None
+        self.__folder = None  # (re)set in folder.setter
+        self.__service_folder_name = None  # (re)set in folder.setter
         self.folder = folder
-        self.__service_name = self.__sanitize_service_name(self.__basename)
-        self.__service_folder_name = self.__sanitize_service_name(self.folder)
         self.__service_copy_data_to_server = False
         self.__service_server_type = None
         self.__service_connection_file_path = None
@@ -70,6 +71,7 @@ class Doc(object):
                 self.__draft_file_name = base + '.sddraft'
                 self.__sd_file_name = base + '.sd'
                 self.__issues_file_name = base + '.issues.json'
+                self.__service_name = self.__sanitize_service_name(self.__basename)
             else:
                 logger.warn('Path (%s) Not found. This is an invalid document.', new_value)
         except TypeError:
@@ -84,13 +86,16 @@ class Doc(object):
         """Make sure new_value is text or set to None"""
         if new_value is None:
             self.__folder = None
+            self.__service_folder_name = None
             return
         try:
             _ = new_value.isalnum()
             self.__folder = new_value
+            self.__service_folder_name = self.__sanitize_service_name(self.folder)
         except AttributeError:
             logger.warn("Folder must be None, or text.  Got %s. Using None.", type(new_value))
             self.__folder = None
+            self.__service_folder_name = None
 
     @property
     def server(self):
