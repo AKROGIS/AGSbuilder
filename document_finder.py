@@ -31,8 +31,8 @@ class Documents:
 
     @property
     def items_to_publish(self):
-        return [Doc("my.mxd", config=self.__settings)]
+        return []  # Doc("my.mxd", config=self.__settings)]
 
     @property
     def items_to_unpublish(self):
-        return []
+        return [Doc(r'c:\tmp\ags_test\test\survey.mxd', folder='test', config=self.__settings)]
