@@ -100,10 +100,21 @@ class Documents(object):
             return []
         docs = []
         source_paths = set([path for _, path in mxds])
+        service_paths = [util.service_path(path, folder) for folder, path in mxds]
+        service_paths = [(name if folder is None else folder + "/" + name).lower()
+                         for folder, name in service_paths]
+        service_paths = set(service_paths)
         for path, folder, name in self.history:
-            if path not in source_paths:
-                # TODO: add service_name to the Doc init properties
-                docs.append(Doc(path, folder=folder, config=self.__settings))
+            if path is None:
+                # check if folder/name matches what would come from one of our mxds
+                service_path = (name if folder is None else folder + "/" + name).lower()
+                if service_path not in service_paths:
+                    docs.append(Doc(path, folder=folder, service_name=name, config=self.__settings))
+            else:
+                if path not in source_paths:
+                    # path may be None (for history from server) which is not in the list of paths
+                    # TODO: add service_name to the Doc init properties
+                    docs.append(Doc(path, folder=folder, service_name=name, config=self.__settings))
         logger.debug("Found %s documents to UN-publish", len(docs))
         return docs
 
