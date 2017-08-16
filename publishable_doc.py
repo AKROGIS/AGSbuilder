@@ -498,12 +498,12 @@ class Doc(object):
         Need to check if this is required before calling.
         """
         logger.debug("Fixing draft file %s for replacement", self.__draft_file_name)
-        import xml.dom.minidom as dom
+        import xml.dom.minidom
 
         new_type = 'esriServiceDefinitionType_Replacement'
         file_name = self.__draft_file_name
 
-        xdoc = dom.parse(file_name)
+        xdoc = xml.dom.minidom.parse(file_name)
         descriptions = xdoc.getElementsByTagName('Type')
         for desc in descriptions:
             if desc.parentNode.tagName == 'SVCManifest':
