@@ -27,11 +27,13 @@ logger.addHandler(logging.NullHandler())
 #       create new *.sd
 
 class Documents(object):
-    def __init__(self, path=None, settings=None):
+    def __init__(self, path=None, history=None, settings=None):
         self.__path = None
+        self.__history = None
         self.__filesystem_mxds = []
         self.__settings = settings
         self.path = path
+        self.history = history
 
     @property
     def path(self):
@@ -40,12 +42,30 @@ class Documents(object):
     @path.setter
     def path(self, new_value):
         # TODO: Check if valid?
-        # TODO: use config value if None
+        # TODO: use settings if None
         logger.debug("setting path from %s to %s", self.__path, new_value)
         if new_value == self.__path:
             return
         self.__path = new_value
         self.__filesystem_mxds = self.__get_filesystem_mxds()
+
+    @property
+    def history(self):
+        """Returns a list of tuples [(source_path,service_folder,service_name),..]
+        These are services that have been previously published, and not deleted"""
+        return self.__history
+
+    @history.setter
+    def history(self, new_value):
+        """Can be a path, or a list of tuples
+        If it is a path, then it should contain a csv file with source_path,service_folder,service_name"""
+        # TODO: Check if valid?
+        # TODO: use settings if None
+        # TODO: If still none, get for the server in the settings
+        logger.debug("setting path from %s to %s", self.__path, new_value)
+        if new_value == self.__history:
+            return
+        self.__history = new_value
 
     @property
     def items_to_publish(self):
@@ -58,7 +78,17 @@ class Documents(object):
 
     @property
     def items_to_unpublish(self):
-        return [Doc(r'c:\tmp\ags_test\test\survey.mxd', folder='test', config=self.__settings)]
+        if self.history is None:
+            return []
+        mxds = self.__filesystem_mxds
+        # TODO: if history is lengthy, and mxds is empty, it might be the sign of a problem. Should we delete all?
+        docs = []
+        source_paths = set([path for _,path in mxds])
+        for path, folder, name in self.history:
+            if path not in source_paths:
+                # TODO: add service_name to the Doc init properties
+                docs.append(Doc(path, folder=folder, config=self.__settings))
+        return docs
 
     def __get_filesystem_mxds(self):
         """Looks in the filesystem for map documents to publish
