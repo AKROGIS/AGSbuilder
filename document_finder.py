@@ -82,9 +82,12 @@ class Documents(object):
         if self.history is None:
             return []
         mxds = self.__filesystem_mxds
-        # TODO: if history is lengthy, and mxds is empty, it might be the sign of a problem. Should we delete all?
+        if len(mxds) == 0:
+            logger.warn("No *.mxd files found, Unwilling to unpublish all without an override.")
+            # TODO: support an override to unpublish all?
+            return []
         docs = []
-        source_paths = set([path for _,path in mxds])
+        source_paths = set([path for _, path in mxds])
         for path, folder, name in self.history:
             if path not in source_paths:
                 # TODO: add service_name to the Doc init properties
