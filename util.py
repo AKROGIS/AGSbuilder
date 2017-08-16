@@ -83,3 +83,28 @@ def get_services_from_server_folder(server_url, folder):
         logger.error("Failed to get services from server %s in folder %s: %s", server_url, folder, ex.message)
         return None
     return services
+
+
+def service_path(mxd_path, folder=None):
+    if mxd_path is None:
+        return None
+    name = os.path.splitext(os.path.basename(mxd_path))[0]
+    new_name = sanitize_service_name(name)
+    if folder is None:
+        return None, new_name
+    new_folder = sanitize_service_name(folder)
+    return new_folder, new_name
+
+
+def sanitize_service_name(name, replacement='_'):
+    """Replace all non alphanumeric characters with replacement
+
+    The name can only contain alphanumeric characters and underscores.
+    No spaces or special characters are allowed.
+    The name cannot be more than 120 characters in length.
+    http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm"""
+
+    if name is None:
+        return None
+    clean_chars = [c if c.isalnum() else replacement for c in name]
+    return ''.join(clean_chars)[:120]

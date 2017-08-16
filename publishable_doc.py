@@ -84,7 +84,7 @@ class Doc(object):
                 self.__draft_file_name = base + '.sddraft'
                 self.__sd_file_name = base + '.sd'
                 self.__issues_file_name = base + '.issues.json'
-                self.__service_name = self.__sanitize_service_name(self.__basename)
+                self.__service_name = util.sanitize_service_name(self.__basename)
             else:
                 logger.warn('Path (%s) Not found. This is an invalid document.', new_value)
         except TypeError:
@@ -104,7 +104,7 @@ class Doc(object):
         try:
             _ = new_value.isalnum()
             self.__folder = new_value
-            self.__service_folder_name = self.__sanitize_service_name(self.folder)
+            self.__service_folder_name = util.sanitize_service_name(self.folder)
         except AttributeError:
             logger.warn("Folder must be None, or text.  Got %s. Using None.", type(new_value))
             self.__folder = None
@@ -632,20 +632,6 @@ class Doc(object):
         except (TypeError, KeyError):
             logger.error('Invalid server response while generating token: %s', json_response)
         return None
-
-    @staticmethod
-    def __sanitize_service_name(name, replacement='_'):
-        """Replace all non alphanumeric characters with replacement
-
-        The name can only contain alphanumeric characters and underscores.
-        No spaces or special characters are allowed.
-        The name cannot be more than 120 characters in length.
-        http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm"""
-
-        if name is None:
-            return None
-        clean_chars = [c if c.isalnum() else replacement for c in name]
-        return ''.join(clean_chars)[:120]
 
 
 # Testing
