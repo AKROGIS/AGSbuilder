@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import logging
 import os.path
+from io import open  # for python2/3 compatibility
 from publishable_doc import Doc
 import util
 
@@ -60,9 +61,13 @@ class Documents(object):
         if new_value == self.__path:
             return
         logger.debug("setting path from %s to %s", self.__path, new_value)
-        # TODO: Check if valid?
-        self.__path = new_value
-        self.__filesystem_mxds = self.__get_filesystem_mxds()
+        if new_value is not None and os.path.isdir(new_value):
+            self.__path = new_value
+            self.__filesystem_mxds = self.__get_filesystem_mxds()
+        else:
+            logger.debug("Path is None or not found, There are no filesystem_mxds")
+            self.__path = None
+            self.__filesystem_mxds = []
 
     @property
     def history(self):
@@ -74,11 +79,21 @@ class Documents(object):
     def history(self, new_value):
         """Can be a path, or a list of tuples
         If it is a path, then it should contain a csv file with source_path,service_folder,service_name"""
-        # TODO: Check if valid?
         if new_value == self.__history:
             return
         logger.debug("setting history from %s to %s", self.__history, new_value)
         self.__history = new_value
+        if new_value is None:
+            return
+        if isinstance(new_value, list):
+            if len(new_value) == 0 or (isinstance(new_value[0], tuple) and len(new_value[0]) == 3):
+                return
+            else:
+                self.__history = None
+                logger.warn("History list must have 3-tuple members, Setting history to None")
+        else:
+            if os.path.isfile(new_value):
+                self.__history = self.__get_history_from_file(new_value)
 
     @property
     def items_to_publish(self):
@@ -163,6 +178,27 @@ class Documents(object):
         mxd_filepaths = [path for path in paths if os.path.isfile(path)]
         logger.debug("Found %s *.mxd files in %s", len(mxd_filepaths), folder)
         return mxd_filepaths
+
+    @staticmethod
+    def __get_history_from_file(path):
+        """Read a publishing history from a csv file.
+
+        The first row of the file will be skipped (assumed to be a header row).
+        The file must have at least three columns which will be interpreted as text for
+        a full file path to a service source, a service folder, and a service name"""
+        try:
+            import csv
+            history = []
+            with open(path, "rb") as f:
+                csv_reader = csv.reader(f)
+                header = csv_reader.next()
+                if len(header) < 3:
+                    raise IndexError("file does not have at least 3 rows")
+                for row in csv_reader:
+                    history.append(row[:3])
+            return history
+        except Exception as ex:
+            logger.warn("Unable to parse the file %s: %s", path, ex)
 
 
 def test_path():
