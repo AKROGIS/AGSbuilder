@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import logging
 import os.path
 from publishable_doc import Doc
+import util
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -120,14 +121,26 @@ class Documents(object):
         return mxds
 
     def __get_history_from_server(self):
-        "Get a list of services on the server provided in the settings"
+        """Get a list of services on the server provided in the settings"""
         server = None
         try:
-            server = self.__settings.server
+            server = self.__settings.server_url
         except AttributeError:
-            logger.warn("Unable to get the list of services (server not defined in the configuration settings)")
+            logger.info("server_url not defined in the configuration settings")
+        if server is None:
+            conn_file = None
+            try:
+                conn_file = self.__settings.server
+            except AttributeError:
+                logger.info("server not defined in the configuration settings")
+            server = util.get_service_url_from_ags_file(conn_file)
+        if server is None:
+            logger.info("Unable to get services (No server_url is defined)")
             return None
-        # TODO: Get services from server (see code in doc)
+        services = util.get_services_from_server(server)
+        logger.debug("Found %s services at %s", len(services), server)
+        history = [(None, folder, name) for folder, name in services]
+        return history
 
     @staticmethod
     def __find_mxds_in_folder(folder):

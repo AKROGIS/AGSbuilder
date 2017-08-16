@@ -3,6 +3,7 @@ import os.path
 import logging
 import requests
 from io import open  # for python2/3 compatibility
+import util
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -59,7 +60,7 @@ class Doc(object):
             if self.server_url is None:
                 if self.__service_connection_file_path is not None:
                     logger.debug("Server URL is undefined. Trying to get from connection file")
-                    self.server_url = self.__service_url_from_ags(self.__service_connection_file_path)
+                    self.server_url = util.get_service_url_from_ags_file(self.__service_connection_file_path)
 
     # Read/Write Properties
 
@@ -645,34 +646,6 @@ class Doc(object):
             return None
         clean_chars = [c if c.isalnum() else replacement for c in name]
         return ''.join(clean_chars)[:120]
-
-    @staticmethod
-    def __service_url_from_ags(path):
-        """find and return the first 'URL' string in the binary file at path
-
-        The ags file is in utf16, so decode properly to do string searches"""
-        url_start = 'http'
-        url_end = '/arcgis'
-        result = set([])
-        with open(path, 'rb') as f:
-            data = f.read()
-            text = data.decode('utf16')
-            # print(text)
-            start_index = 0
-            while 0 <= start_index:
-                start_index = text.find(url_start, start_index)
-                # print('start_index', start_index)
-                if 0 <= start_index:
-                    end_index = text.find(url_end, start_index)
-                    # print('end_index', end_index)
-                    if 0 <= end_index:
-                        url = text[start_index:end_index] + url_end
-                        result.add(url)
-                        start_index = end_index
-        if len(result) == 1:
-            return list(result)[0]
-        else:
-            return None
 
 
 # Testing
