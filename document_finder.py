@@ -32,8 +32,22 @@ class Documents(object):
         self.__history = None
         self.__filesystem_mxds = []
         self.__settings = settings
-        self.path = path
-        self.history = history
+
+        if path is not None:
+            self.path = path
+        else:
+            try:
+                self.path = self.__settings.root_directory
+            except AttributeError:
+                self.path = None
+
+        if history is not None:
+            self.history = history
+        else:
+            try:
+                self.history = self.__settings.history_file
+            except AttributeError:
+                self.history = self.__get_history_from_server()
 
     @property
     def path(self):
@@ -42,11 +56,10 @@ class Documents(object):
     @path.setter
     def path(self, new_value):
         """Set the file system path to search for *.mxd files"""
-        # TODO: Check if valid?
-        # TODO: use settings if None
         if new_value == self.__path:
             return
         logger.debug("setting path from %s to %s", self.__path, new_value)
+        # TODO: Check if valid?
         self.__path = new_value
         self.__filesystem_mxds = self.__get_filesystem_mxds()
 
@@ -61,8 +74,6 @@ class Documents(object):
         """Can be a path, or a list of tuples
         If it is a path, then it should contain a csv file with source_path,service_folder,service_name"""
         # TODO: Check if valid?
-        # TODO: use settings if None
-        # TODO: If still none, get for the server in the settings
         if new_value == self.__history:
             return
         logger.debug("setting history from %s to %s", self.__history, new_value)
@@ -107,6 +118,16 @@ class Documents(object):
                 path = os.path.join(self.path, folder)
                 mxds += [(folder, mxd) for mxd in self.__find_mxds_in_folder(path)]
         return mxds
+
+    def __get_history_from_server(self):
+        "Get a list of services on the server provided in the settings"
+        server = None
+        try:
+            server = self.__settings.server
+        except AttributeError:
+            logger.warn("Unable to get the list of services (server not defined in the configuration settings)")
+            return None
+        # TODO: Get services from server (see code in doc)
 
     @staticmethod
     def __find_mxds_in_folder(folder):
