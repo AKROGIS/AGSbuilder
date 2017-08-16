@@ -41,11 +41,12 @@ class Documents(object):
 
     @path.setter
     def path(self, new_value):
+        """Set the file system path to search for *.mxd files"""
         # TODO: Check if valid?
         # TODO: use settings if None
-        logger.debug("setting path from %s to %s", self.__path, new_value)
         if new_value == self.__path:
             return
+        logger.debug("setting path from %s to %s", self.__path, new_value)
         self.__path = new_value
         self.__filesystem_mxds = self.__get_filesystem_mxds()
 
@@ -62,9 +63,9 @@ class Documents(object):
         # TODO: Check if valid?
         # TODO: use settings if None
         # TODO: If still none, get for the server in the settings
-        logger.debug("setting path from %s to %s", self.__path, new_value)
         if new_value == self.__history:
             return
+        logger.debug("setting history from %s to %s", self.__history, new_value)
         self.__history = new_value
 
     @property
@@ -72,7 +73,7 @@ class Documents(object):
         # TODO: Enhance document creation with details from a spreadsheet
         # TODO: created additional documents (image services) based on data in spreadsheet
         mxds = self.__filesystem_mxds
-        logger.debug("found %s documents",len(mxds))
+        logger.debug("Found %s documents to publish", len(mxds))
         docs = [Doc(mxd, folder=folder, config=self.__settings) for folder, mxd in mxds]
         return docs
 
@@ -88,33 +89,31 @@ class Documents(object):
             if path not in source_paths:
                 # TODO: add service_name to the Doc init properties
                 docs.append(Doc(path, folder=folder, config=self.__settings))
+        logger.debug("Found %s documents to UN-publish", len(docs))
         return docs
 
     def __get_filesystem_mxds(self):
         """Looks in the filesystem for map documents to publish
         creates a private list of (folder,fullpath) for each mxd found"""
         mxds = []
-        logger.debug("get_filesystem_mxds for %s", self.path)
         if self.path is not None and os.path.isdir(self.path):
-            logger.debug("searching %s", self.path)
             mxds = [(None, mxd) for mxd in self.__find_mxds_in_folder(self.path)]
-            logger.debug("found %s", len(mxds))
             folders = [name for name in os.listdir(self.path)
                        if os.path.isdir(os.path.join(self.path, name))]
             for folder in folders:
-                logger.debug("searching %s", folder)
                 path = os.path.join(self.path, folder)
                 mxds += [(folder, mxd) for mxd in self.__find_mxds_in_folder(path)]
-                logger.debug("found %s", len(mxds))
         return mxds
 
     @staticmethod
     def __find_mxds_in_folder(folder):
+        logger.debug("Searching %s for *.mxd files", folder)
         names = os.listdir(folder)
         mxds = [name for name in names if os.path.splitext(name)[1].lower() == '.mxd']
         paths = [os.path.join(folder, mxd) for mxd in mxds]
         # make sure it is a file, and not some weird directory name
         mxd_filepaths = [path for path in paths if os.path.isfile(path)]
+        logger.debug("Found %s *.mxd files in %s", len(mxd_filepaths), folder)
         return mxd_filepaths
 
 
