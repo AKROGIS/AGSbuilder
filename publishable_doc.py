@@ -14,9 +14,9 @@ class PublishException(Exception):
 
 
 class Doc(object):
-    def __init__(self, path, folder=None, server=None, server_url=None, config=None):
-        logger.debug("Doc.__init__(path=%s, folder=%s, server=%s, server_url=%s, config=%s",
-                     path, folder, server, server_url, config)
+    def __init__(self, path, folder=None, service_name=None, server=None, server_url=None, config=None):
+        logger.debug("Doc.__init__(path=%s, folder=%s, service_name=%s, server=%s, server_url=%s, config=%s",
+                     path, folder, service_name, server, server_url, config)
         self.__config = config
         self.__basename = None
         self.__ext = None
@@ -31,6 +31,8 @@ class Doc(object):
         self.__folder = None  # (re)set in folder.setter
         self.__service_folder_name = None  # (re)set in folder.setter
         self.folder = folder
+        if service_name is not None:
+            self.__service_name = util.sanitize_service_name(service_name)
         self.__service_copy_data_to_server = False
         self.__service_server_type = None
         self.__service_connection_file_path = None
@@ -70,7 +72,10 @@ class Doc(object):
 
     @path.setter
     def path(self, new_value):
-        """Make sure new_value is text or set to None"""
+        """Make sure new_value is text or set to None
+
+        Note: setting path will also set a default value for the service name, if you want a different service_name
+        you must set it explicitly __after__ setting the path"""
         try:
             # FIXME: if this is an image service then it is a dataset a fgdb (which isn't a real file)
             # TODO: set self.__is_image_service here
@@ -84,7 +89,7 @@ class Doc(object):
                 self.__draft_file_name = base + '.sddraft'
                 self.__sd_file_name = base + '.sd'
                 self.__issues_file_name = base + '.issues.json'
-                self.__service_name = util.sanitize_service_name(self.__basename)
+                self.service_name = self.__basename
             else:
                 logger.warn('Path (%s) Not found. This is an invalid document.', new_value)
         except TypeError:
@@ -109,6 +114,22 @@ class Doc(object):
             logger.warn("Folder must be None, or text.  Got %s. Using None.", type(new_value))
             self.__folder = None
             self.__service_folder_name = None
+
+    @property
+    def service_name(self):
+        return self.__service_name
+
+    @service_name.setter
+    def service_name(self, new_value):
+        """Make sure new_value is text or set to None"""
+        if new_value == self.__service_name:
+            return
+        try:
+            _ = new_value.isalnum()
+            self.__service_name = util.sanitize_service_name(new_value)
+        except AttributeError:
+            logger.warn("Service name must be text.  Got %s. Using default from path.", type(new_value))
+            self.__service_name = util.sanitize_service_name(self.__basename)
 
     @property
     def server(self):
