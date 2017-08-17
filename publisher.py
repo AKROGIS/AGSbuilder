@@ -91,7 +91,7 @@ def get_configuration_settings():
 
 def main():
     settings = get_configuration_settings()
-    documents = Documents(settings)
+    documents = Documents(config=settings)
     for doc in documents.items_to_publish:
         if doc.is_publishable:
             try:
