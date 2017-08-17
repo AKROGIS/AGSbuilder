@@ -29,9 +29,10 @@ logger.addHandler(logging.NullHandler())
 #       create new *.sd
 
 class Documents(object):
-    def __init__(self, path=None, history=None, settings=None):
+    def __init__(self, path=None, history=None, service_list=None, settings=None):
         self.__path = None
         self.__history = None
+        self.__service_list = None
         self.__filesystem_mxds = []
         self.__settings = settings
 
@@ -50,6 +51,14 @@ class Documents(object):
                 self.history = self.__settings.history_file
             except AttributeError:
                 self.history = self.__get_history_from_server()
+
+        if service_list is not None:
+            self.service_list = service_list
+        else:
+            try:
+                self.service_list = self.__settings.service_list
+            except AttributeError:
+                self.service_list = None
 
     @property
     def path(self):
@@ -96,6 +105,32 @@ class Documents(object):
                 self.__history = self.__get_history_from_file(new_value)
 
     @property
+    def service_list(self):
+        """Returns a list of tuples [(source_path,service_folder,service_name),..]
+        These are services that have been previously published, and not deleted"""
+        return self.__service_list
+
+    @service_list.setter
+    def service_list(self, new_value):
+        """Can be a path, or a list of tuples
+        If it is a path, then it should contain a csv file with source_path,service_folder,service_name"""
+        if new_value == self.__service_list:
+            return
+        logger.debug("setting service list from %s to %s", self.__service_list, new_value)
+        self.__service_list = new_value
+        if new_value is None:
+            return
+        if isinstance(new_value, list):
+            if len(new_value) == 0 or (isinstance(new_value[0], tuple) and len(new_value[0]) == 3):
+                return
+            else:
+                self.__service_list = None
+                logger.warn("Service list must have 3-tuple members, Setting list to None")
+        else:
+            if os.path.isfile(new_value):
+                self.__service_list = self.__get_server_list_from_file(new_value)
+
+    @property
     def items_to_publish(self):
         # TODO: Enhance document creation with details from a spreadsheet
         # TODO: created additional documents (image services) based on data in spreadsheet
@@ -106,6 +141,7 @@ class Documents(object):
 
     @property
     def items_to_unpublish(self):
+        # TODO: unpublish documents flagged in the spreadsheet
         if self.history is None:
             return []
         mxds = self.__filesystem_mxds
@@ -121,14 +157,12 @@ class Documents(object):
         service_paths = set(service_paths)
         for path, folder, name in self.history:
             if path is None:
-                # check if folder/name matches what would come from one of our mxds
+                # check if folder/name matches what would come from one of our mxds, if so, then keep it
                 service_path = (name if folder is None else folder + "/" + name).lower()
                 if service_path not in service_paths:
                     docs.append(Doc(path, folder=folder, service_name=name, config=self.__settings))
             else:
                 if path not in source_paths:
-                    # path may be None (for history from server) which is not in the list of paths
-                    # TODO: add service_name to the Doc init properties
                     docs.append(Doc(path, folder=folder, service_name=name, config=self.__settings))
         logger.debug("Found %s documents to UN-publish", len(docs))
         return docs
@@ -199,6 +233,29 @@ class Documents(object):
             return history
         except Exception as ex:
             logger.warn("Unable to parse the file %s: %s", path, ex)
+            return None
+
+    @staticmethod
+    def __get_server_list_from_file(path):
+        """Read a list of services to publish from a csv file.
+
+        The first row of the file will be skipped (assumed to be a header row).
+        The file must have at least X columns which will be interpreted as text for ..."""
+        # TODO: define the service list file format
+        try:
+            import csv
+            services = []
+            with open(path, "rb") as f:
+                csv_reader = csv.reader(f)
+                header = csv_reader.next()
+                if len(header) < 3:
+                    raise IndexError("file does not have at least 3 rows")
+                for row in csv_reader:
+                    services.append(row[:3])
+            return services
+        except Exception as ex:
+            logger.warn("Unable to parse the file %s: %s", path, ex)
+            return None
 
 
 def test_path():
