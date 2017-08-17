@@ -70,6 +70,7 @@ def get_configuration_settings():
     parser.add_argument('-p', '--admin_password', default=config.admin_password,
                         help=('The password for the admin account. '
                               'If not provided, the value in config.py is used'))
+    parser.add_argument('-n', '--dryrun', action='store_true', help='Dry run. Do not make changes on the server')
     parser.add_argument('-v', '--verbose', action='store_true', help='Show informational messages.')
     parser.add_argument('--debug', action='store_true', help='Show extensive debugging messages.')
 
@@ -95,13 +96,18 @@ def main():
     for doc in documents.items_to_publish:
         if doc.is_publishable:
             try:
-                doc.publish()
+                if settings.dry_run:
+                    print("{0} is publishable as {1} with the following issues:".format(doc.name, doc.service_path))
+                    print(doc.issues)
+                else:
+                    doc.publish()
             except PublishException as ex:
                 logger.error("Unable to publish %s because %s", doc.name, ex.message)
         else:
             logger.warn("Unable to publish %s because %s", doc.name, doc.errors)
     for doc in documents.items_to_unpublish:
         try:
+            # TODO: add dry run
             doc.unpublish()
         except PublishException as ex:
             logger.error("Unable to remove service for %s because %s", doc.name, ex)
