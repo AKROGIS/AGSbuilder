@@ -29,18 +29,18 @@ logger.addHandler(logging.NullHandler())
 #       create new *.sd
 
 class Documents(object):
-    def __init__(self, path=None, history=None, service_list=None, settings=None):
+    def __init__(self, path=None, history=None, service_list=None, config=None):
         self.__path = None
         self.__history = None
         self.__service_list = None
         self.__filesystem_mxds = []
-        self.__settings = settings
+        self.__config = config
 
         if path is not None:
             self.path = path
         else:
             try:
-                self.path = self.__settings.root_directory
+                self.path = self.__config.root_directory
             except AttributeError:
                 self.path = None
 
@@ -48,7 +48,7 @@ class Documents(object):
             self.history = history
         else:
             try:
-                self.history = self.__settings.history_file
+                self.history = self.__config.history_file
             except AttributeError:
                 self.history = self.__get_history_from_server()
 
@@ -56,7 +56,7 @@ class Documents(object):
             self.service_list = service_list
         else:
             try:
-                self.service_list = self.__settings.service_list
+                self.service_list = self.__config.service_list
             except AttributeError:
                 self.service_list = None
 
@@ -136,7 +136,7 @@ class Documents(object):
         # TODO: created additional documents (image services) based on data in spreadsheet
         mxds = self.__filesystem_mxds
         logger.debug("Found %s documents to publish", len(mxds))
-        docs = [Doc(mxd, folder=folder, config=self.__settings) for folder, mxd in mxds]
+        docs = [Doc(mxd, folder=folder, config=self.__config) for folder, mxd in mxds]
         return docs
 
     @property
@@ -160,10 +160,10 @@ class Documents(object):
                 # check if folder/name matches what would come from one of our mxds, if so, then keep it
                 service_path = (name if folder is None else folder + "/" + name).lower()
                 if service_path not in service_paths:
-                    docs.append(Doc(path, folder=folder, service_name=name, config=self.__settings))
+                    docs.append(Doc(path, folder=folder, service_name=name, config=self.__config))
             else:
                 if path not in source_paths:
-                    docs.append(Doc(path, folder=folder, service_name=name, config=self.__settings))
+                    docs.append(Doc(path, folder=folder, service_name=name, config=self.__config))
         logger.debug("Found %s documents to UN-publish", len(docs))
         return docs
 
@@ -181,16 +181,16 @@ class Documents(object):
         return mxds
 
     def __get_history_from_server(self):
-        """Get a list of services on the server provided in the settings"""
+        """Get a list of services on the server provided in the configuration settings"""
         server = None
         try:
-            server = self.__settings.server_url
+            server = self.__config.server_url
         except AttributeError:
             logger.info("server_url not defined in the configuration settings")
         if server is None:
             conn_file = None
             try:
-                conn_file = self.__settings.server
+                conn_file = self.__config.server
             except AttributeError:
                 logger.info("server not defined in the configuration settings")
             server = util.get_service_url_from_ags_file(conn_file)
