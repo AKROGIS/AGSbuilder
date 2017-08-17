@@ -23,6 +23,8 @@ def get_configuration_settings():
 
     # Ensure defaults exist to avoid AttributeErrors below
     config.root_directory = getattr(config, 'root_directory', None)
+    config.history_file = getattr(config, 'history_file', None)
+    config.service_list = getattr(config, 'service_list', None)
     config.server = getattr(config, 'server', None)
     config.server_url = getattr(config, 'server_url', None)
     config.admin_username = getattr(config, 'admin_username', None)
@@ -37,6 +39,19 @@ def get_configuration_settings():
         parser.add_argument('root_directory', nargs='?', metavar='PATH', default=config.root_directory,
                             help=('The directory of documents to publish. '
                                   'The default is {0}').format(config.root_directory))
+    parser.add_argument('--history_file', default=config.history_file,
+                        help=('The history_file is a path to a csv file with records of the '
+                              'services published. It is used to determine what services are '
+                              'orphaned and should be unpublished.  If None the server is '
+                              'queried for the current list of all services regardless of '
+                              'source. '
+                              'The default is {0}').format(config.history_file))
+    parser.add_argument('--service_list', default=config.service_list,
+                        help=('The service_list is a path to a csv file with records of services '
+                              'to be published. This will be considered along with the files found '
+                              'in the root_directory. It can be used to publish image services and '
+                              'provide non-default publishing parameters. '
+                              'The default is {0}').format(config.service_list))
     parser.add_argument('-s', '--server', default=config.server,
                         help=('The server to publish to. Must be a path to a connection (*.ags) file, '
                               'or MY_HOSTED_SERVICES (the default if None is provided). '
