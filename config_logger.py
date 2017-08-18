@@ -39,6 +39,6 @@ config = {
     },
     'root': {
         'level': 'NOTSET',
-        'handlers': ['console', 'file'] #  , 'email']  # only send emails in production
+        'handlers': ['console', 'file']  # , 'email']  # only send emails in production
     }
 }
