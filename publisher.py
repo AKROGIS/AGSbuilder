@@ -104,7 +104,7 @@ def main():
             except PublishException as ex:
                 logger.error("Unable to publish %s because %s", doc.name, ex.message)
         else:
-            logger.warn("Unable to publish %s because %s", doc.name, doc.errors)
+            logger.warning("Unable to publish %s because %s", doc.name, doc.errors)
     for doc in documents.items_to_unpublish:
         try:
             # TODO: add dry run

@@ -99,7 +99,7 @@ class Documents(object):
                 return
             else:
                 self.__history = None
-                logger.warn("History list must have 3-tuple members, Setting history to None")
+                logger.warning("History list must have 3-tuple members, Setting history to None")
         else:
             if os.path.isfile(new_value):
                 self.__history = self.__get_history_from_file(new_value)
@@ -125,7 +125,7 @@ class Documents(object):
                 return
             else:
                 self.__service_list = None
-                logger.warn("Service list must have 3-tuple members, Setting list to None")
+                logger.warning("Service list must have 3-tuple members, Setting list to None")
         else:
             if os.path.isfile(new_value):
                 self.__service_list = self.__get_server_list_from_file(new_value)
@@ -146,7 +146,7 @@ class Documents(object):
             return []
         mxds = self.__filesystem_mxds
         if len(mxds) == 0:
-            logger.warn("No *.mxd files found, Unwilling to unpublish all without an override.")
+            logger.warning("No *.mxd files found, Unwilling to unpublish all without an override.")
             # TODO: support an override to unpublish all?
             return []
         docs = []
@@ -232,7 +232,7 @@ class Documents(object):
                     history.append(row[:3])
             return history
         except Exception as ex:
-            logger.warn("Unable to parse the file %s: %s", path, ex)
+            logger.warning("Unable to parse the file %s: %s", path, ex)
             return None
 
     @staticmethod
@@ -254,7 +254,7 @@ class Documents(object):
                     services.append(row[:3])
             return services
         except Exception as ex:
-            logger.warn("Unable to parse the file %s: %s", path, ex)
+            logger.warning("Unable to parse the file %s: %s", path, ex)
             return None
 
 

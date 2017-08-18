@@ -44,7 +44,7 @@ def get_services_from_server(server_url):
     logger.debug("Get list of services on server %s", server_url)
 
     if server_url is None:
-        logger.warn("Unable to get services (No server_url is defined)")
+        logger.warning("Unable to get services (No server_url is defined)")
 
     url = server_url + '/rest/services?f=json'
 
@@ -68,7 +68,7 @@ def get_services_from_server_folder(server_url, folder):
     logger.debug("Get list of services on server %s in folder %s", server_url, folder)
 
     if server_url is None:
-        logger.warn("Unable to get services (No server_url is defined)")
+        logger.warning("Unable to get services (No server_url is defined)")
         return None
 
     if folder is None:

@@ -91,9 +91,9 @@ class Doc(object):
                 self.__issues_file_name = base + '.issues.json'
                 self.service_name = self.__basename
             else:
-                logger.warn('Path (%s) Not found. This is an invalid document.', new_value)
+                logger.warning('Path (%s) Not found. This is an invalid document.', new_value)
         except TypeError:
-            logger.warn("Path must be text.  Got %s. This is an invalid document.", type(new_value))
+            logger.warning("Path must be text.  Got %s. This is an invalid document.", type(new_value))
 
     @property
     def folder(self):
@@ -111,7 +111,7 @@ class Doc(object):
             self.__folder = new_value
             self.__service_folder_name = util.sanitize_service_name(self.folder)
         except AttributeError:
-            logger.warn("Folder must be None, or text.  Got %s. Using None.", type(new_value))
+            logger.warning("Folder must be None, or text.  Got %s. Using None.", type(new_value))
             self.__folder = None
             self.__service_folder_name = None
 
@@ -128,7 +128,7 @@ class Doc(object):
             _ = new_value.isalnum()
             self.__service_name = util.sanitize_service_name(new_value)
         except AttributeError:
-            logger.warn("Service name must be text.  Got %s. Using default from path.", type(new_value))
+            logger.warning("Service name must be text.  Got %s. Using default from path.", type(new_value))
             self.__service_name = util.sanitize_service_name(self.__basename)
 
     @property
@@ -162,9 +162,9 @@ class Doc(object):
                 self.__service_server_type = conn_file
                 self.__service_connection_file_path = new_value
             else:
-                logger.warn('Connection file (%s) not found. Using default.', new_value)
+                logger.warning('Connection file (%s) not found. Using default.', new_value)
         except TypeError:
-            logger.warn("Server must be None, '%s', or a file path.  Got %s. Using default.", hosted, new_value)
+            logger.warning("Server must be None, '%s', or a file path.  Got %s. Using default.", hosted, new_value)
 
         logger.debug('Setting document %s service_server_type to %s and service_connection_file_path to %s',
                      self.name, self.__service_server_type, self.__service_connection_file_path)
@@ -213,7 +213,7 @@ class Doc(object):
             try:
                 self.__create_draft_service_definition()
             except PublishException as ex:
-                logger.warn("Unable to create draft service definition: %s", ex.message)
+                logger.warning("Unable to create draft service definition: %s", ex.message)
                 return False
 
         # I may have a draft file, but it may not be publishable, make sure I have analysis results.
@@ -221,11 +221,11 @@ class Doc(object):
             try:
                 self.__analyze_draft_service_definition()
             except PublishException as ex:
-                logger.warn("Unable to analyze the service: %s", ex.message)
+                logger.warning("Unable to analyze the service: %s", ex.message)
                 return False
 
         if self.__draft_analysis_result is None:
-            logger.warn("Unable to analyze service definition draft, NOT ready to publish.")
+            logger.warning("Unable to analyze service definition draft, NOT ready to publish.")
             return False
 
         if 'errors' in self.__draft_analysis_result and 0 < len(self.__draft_analysis_result['errors']):
@@ -248,7 +248,7 @@ class Doc(object):
             try:
                 self.__analyze_draft_service_definition()
             except PublishException as ex:
-                logger.warn("Unable to analyze the service: %s", ex.message)
+                logger.warning("Unable to analyze the service: %s", ex.message)
 
         if self.__draft_analysis_result is None:
             error = 'ERRORS:\n  '
@@ -387,7 +387,7 @@ class Doc(object):
                 # sample response: {..., "folders":["folder1","folder2"], ...}
                 folders = [folder.lower() for folder in json['folders']]
             except Exception as ex:
-                logger.warn("Failed to check for service, %s. Assume service exists", ex.message)
+                logger.warning("Failed to check for service, %s. Assume service exists", ex.message)
                 return True
             logger.debug("folders found: %s", folders)
             if self.__service_folder_name.lower() in folders:
@@ -401,7 +401,7 @@ class Doc(object):
             # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
             services = [service['name'].lower() for service in json['services']]
         except Exception as ex:
-            logger.warn("Failed to check for service, %s. Assume service exists", ex.message)
+            logger.warning("Failed to check for service, %s. Assume service exists", ex.message)
             return True
 
         logger.debug("services found: %s", services)
@@ -439,7 +439,7 @@ class Doc(object):
                 with open(self.__issues_file_name, 'wb') as f:
                     f.write(json.dumps(self.__draft_analysis_result))
             except Exception as ex:
-                logger.warn("Unable to cache the analysis results: %s", ex.message)
+                logger.warning("Unable to cache the analysis results: %s", ex.message)
 
     def __get_analysis_result_from_cache(self):
         if self.__file_exists_and_is_newer(self.__issues_file_name, self.path):
@@ -448,7 +448,7 @@ class Doc(object):
                 with open(self.__issues_file_name, 'rb') as f:
                     self.__draft_analysis_result = json.load(f)
             except Exception as ex:
-                logger.warn('Unable to load or parse the cached analysis results %s', ex.message)
+                logger.warning('Unable to load or parse the cached analysis results %s', ex.message)
 
     def __simplify_analysis_results(self):
         """self.__draft_analysis_result is not expressible as JSON (keys must be a string),
@@ -620,7 +620,7 @@ class Doc(object):
             new_mtime = os.path.getmtime(new_file)
             return old_mtime < new_mtime
         except Exception as ex:
-            logger.warn("Exception raised checking for file A newer than file B: %s", ex.message)
+            logger.warning("Exception raised checking for file A newer than file B: %s", ex.message)
             return False
 
     @staticmethod
