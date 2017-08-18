@@ -23,7 +23,6 @@
 of SMTPHandler.
 Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 """
-import string
 import logging
 import logging.handlers
 
@@ -48,7 +47,7 @@ class BufferingSMTPHandler(logging.handlers.BufferingHandler):
                     port = smtplib.SMTP_PORT
                 smtp = smtplib.SMTP(self.mailhost, port)
                 msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (self.fromaddr,
-                                                                     string.join(self.toaddrs, ","),
+                                                                     ','.join(self.toaddrs),
                                                                      self.subject)
                 for record in self.buffer:
                     s = self.format(record)
