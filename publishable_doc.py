@@ -75,7 +75,11 @@ class Doc(object):
         """Make sure new_value is text or set to None
 
         Note: setting path will also set a default value for the service name, if you want a different service_name
-        you must set it explicitly __after__ setting the path"""
+        you must set it explicitly __after__ setting the path
+
+        Files are based on ArcGIS Desktop mxd files and not ArcGIS Pro project files.
+        ArcGIS Pro 2.0 does not support publishing to a local ArcGIS Server
+        """
         try:
             # FIXME: if this is an image service then it is a dataset a fgdb (which isn't a real file)
             # TODO: set self.__is_image_service here
@@ -323,6 +327,13 @@ class Doc(object):
 
         ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/createimagesddraft.htm
         ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm
+
+        IMPORTANT NOTES
+         * ArcGIS Pro has renamed the mapping module from arcpy.mapping to arcpy.mp
+         * as of 2.0, arcpy.mp.CreateMapSDDraft only support MY_HOSTED_SERVICES. it does NOT support ArcGIS Server
+         * arcpy.mp.MapDocument() does not exist, get the input to CreateMapSDDraft() from listMaps on a
+             project (*.aprx) file or from arcpy.mp.LayerFile(r"....lyrx").  If you have an *.mxd, you must first
+             import it into a project file to get a map object.
         """
         logger.debug("Creating Draft Service Definition from %s", self.path)
 

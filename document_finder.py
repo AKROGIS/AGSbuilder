@@ -132,6 +132,10 @@ class Documents(object):
 
     @property
     def items_to_publish(self):
+        """Return a list of document objects to publish
+
+        Files are based on ArcGIS Desktop mxd files and not ArcGIS Pro project files
+        """
         # TODO: Enhance document creation with details from a spreadsheet
         # TODO: created additional documents (image services) based on data in spreadsheet
         mxds = self.__filesystem_mxds
