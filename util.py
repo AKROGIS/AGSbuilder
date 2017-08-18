@@ -54,7 +54,7 @@ def get_services_from_server(server_url):
         root_services = json['services']
         folders = json['folders']
     except Exception as ex:
-        logger.error("Failed to get services on %s: %s", server_url, ex.message)
+        logger.error("Failed to get services on %s: %s", server_url, ex)
         return None
     services = [(None, service) for service in root_services]
     for folder in folders:
@@ -80,7 +80,7 @@ def get_services_from_server_folder(server_url, folder):
         # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
         services = json['services']
     except Exception as ex:
-        logger.error("Failed to get services from server %s in folder %s: %s", server_url, folder, ex.message)
+        logger.error("Failed to get services from server %s in folder %s: %s", server_url, folder, ex)
         return None
     return services
 

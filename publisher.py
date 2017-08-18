@@ -102,7 +102,7 @@ def main():
                 else:
                     doc.publish()
             except PublishException as ex:
-                logger.error("Unable to publish %s because %s", doc.name, ex.message)
+                logger.error("Unable to publish %s because %s", doc.name, ex)
         else:
             logger.warning("Unable to publish %s because %s", doc.name, doc.errors)
     for doc in documents.items_to_unpublish:

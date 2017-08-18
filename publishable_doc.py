@@ -213,7 +213,7 @@ class Doc(object):
             try:
                 self.__create_draft_service_definition()
             except PublishException as ex:
-                logger.warning("Unable to create draft service definition: %s", ex.message)
+                logger.warning("Unable to create draft service definition: %s", ex)
                 return False
 
         # I may have a draft file, but it may not be publishable, make sure I have analysis results.
@@ -221,7 +221,7 @@ class Doc(object):
             try:
                 self.__analyze_draft_service_definition()
             except PublishException as ex:
-                logger.warning("Unable to analyze the service: %s", ex.message)
+                logger.warning("Unable to analyze the service: %s", ex)
                 return False
 
         if self.__draft_analysis_result is None:
@@ -248,7 +248,7 @@ class Doc(object):
             try:
                 self.__analyze_draft_service_definition()
             except PublishException as ex:
-                logger.warning("Unable to analyze the service: %s", ex.message)
+                logger.warning("Unable to analyze the service: %s", ex)
 
         if self.__draft_analysis_result is None:
             error = 'ERRORS:\n  '
@@ -350,7 +350,7 @@ class Doc(object):
             try:
                 source = arcpy.mapping.MapDocument(self.path)
             except Exception as ex:
-                PublishException(ex.message)
+                PublishException(ex)
 
         try:
             logger.info("Begin arcpy.createSDDraft(%s)", self.path)
@@ -363,7 +363,7 @@ class Doc(object):
             self.__have_draft = True
             self.__simplify_and_cache_analysis_results()
         except Exception as ex:
-            raise PublishException('Unable to create the draft service definition file: {0}'.format(ex.message))
+            raise PublishException('Unable to create the draft service definition file: {0}'.format(ex))
 
         if self.is_live:
             self.__create_replacement_service_draft()
@@ -387,7 +387,7 @@ class Doc(object):
                 # sample response: {..., "folders":["folder1","folder2"], ...}
                 folders = [folder.lower() for folder in json['folders']]
             except Exception as ex:
-                logger.warning("Failed to check for service, %s. Assume service exists", ex.message)
+                logger.warning("Failed to check for service, %s. Assume service exists", ex)
                 return True
             logger.debug("folders found: %s", folders)
             if self.__service_folder_name.lower() in folders:
@@ -401,7 +401,7 @@ class Doc(object):
             # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
             services = [service['name'].lower() for service in json['services']]
         except Exception as ex:
-            logger.warning("Failed to check for service, %s. Assume service exists", ex.message)
+            logger.warning("Failed to check for service, %s. Assume service exists", ex)
             return True
 
         logger.debug("services found: %s", services)
@@ -428,7 +428,7 @@ class Doc(object):
             self.__draft_analysis_result = arcpy.mapping.AnalyzeForSD(self.__draft_file_name)
             logger.info("Done arcpy.mapping.AnalyzeForSD()")
         except Exception as ex:
-            raise PublishException('Unable to analyze the draft service definition file: {0}'.format(ex.message))
+            raise PublishException('Unable to analyze the draft service definition file: {0}'.format(ex))
         self.__simplify_and_cache_analysis_results()
 
     def __simplify_and_cache_analysis_results(self):
@@ -439,7 +439,7 @@ class Doc(object):
                 with open(self.__issues_file_name, 'wb') as f:
                     f.write(json.dumps(self.__draft_analysis_result))
             except Exception as ex:
-                logger.warning("Unable to cache the analysis results: %s", ex.message)
+                logger.warning("Unable to cache the analysis results: %s", ex)
 
     def __get_analysis_result_from_cache(self):
         if self.__file_exists_and_is_newer(self.__issues_file_name, self.path):
@@ -448,7 +448,7 @@ class Doc(object):
                 with open(self.__issues_file_name, 'rb') as f:
                     self.__draft_analysis_result = json.load(f)
             except Exception as ex:
-                logger.warning('Unable to load or parse the cached analysis results %s', ex.message)
+                logger.warning('Unable to load or parse the cached analysis results %s', ex)
 
     def __simplify_analysis_results(self):
         """self.__draft_analysis_result is not expressible as JSON (keys must be a string),
@@ -510,7 +510,7 @@ class Doc(object):
                 self.__have_service_definition = True
                 self.__have_new_service_definition = True
             except Exception as ex:
-                raise PublishException('Unable to create the service definition file: {0}'.format(ex.message))
+                raise PublishException('Unable to create the service definition file: {0}'.format(ex))
 
     def __create_replacement_service_draft(self):
         """Modify the service definition draft to overwrite the existing service
@@ -587,7 +587,7 @@ class Doc(object):
                 arcpy.UploadServiceDefinition_server(self.__sd_file_name, conn)
                 logger.info("Done arcpy.UploadServiceDefinition_server()")
             except Exception as ex:
-                raise PublishException('Unable to upload the service: {0}'.format(ex.message))
+                raise PublishException('Unable to upload the service: {0}'.format(ex))
 
     def __get_service_type(self):
         # TODO: Implement
@@ -620,7 +620,7 @@ class Doc(object):
             new_mtime = os.path.getmtime(new_file)
             return old_mtime < new_mtime
         except Exception as ex:
-            logger.warning("Exception raised checking for file A newer than file B: %s", ex.message)
+            logger.warning("Exception raised checking for file A newer than file B: %s", ex)
             return False
 
     @staticmethod
@@ -833,7 +833,7 @@ def test_publish():
             doc.publish()
             print("Published!!")
         except PublishException as ex:
-            print("Failed to publish", ex.message)
+            print("Failed to publish", ex)
 
 
 if __name__ == '__main__':
