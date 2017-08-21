@@ -107,8 +107,7 @@ def main():
             logger.warning("Unable to publish %s because %s", doc.name, doc.errors)
     for doc in documents.items_to_unpublish:
         try:
-            # TODO: add dry run
-            doc.unpublish()
+            doc.unpublish(dry_run=settings.dry_run)
         except PublishException as ex:
             logger.error("Unable to remove service for %s because %s", doc.name, ex)
 

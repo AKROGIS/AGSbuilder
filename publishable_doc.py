@@ -275,9 +275,10 @@ class Doc(object):
     def publish(self):
         self.__publish_service()
 
-    def unpublish(self):
+    def unpublish(self, dry_run=False):
         """Stop and delete a service that is already published
 
+        If dry_run is true, then no changes are made to the server
         This requires Rest API URL, Admin credentials and the AGS Rest API
         The ags connection file cannot by used with arcpy to admin the server
         ref: http://resources.arcgis.com/en/help/rest/apiref/index.html
@@ -307,7 +308,13 @@ class Doc(object):
 
         url = self.server_url + '/admin/services/' + self.service_path + '.' + service_type + '/delete'
         data = {'f': 'json', 'token': token}
+        logger.debug("Unpublish command: %s", url)
+        logger.debug("Unpublish data: %s", data)
+        if dry_run:
+            print("Prepared to delete %s from the %s".format(self.service_path, self.server_url))
+            return
         try:
+            logger.info("Attempting to delete %s from the server", self.service_path)
             response = requests.post(url, data=data)
             response.raise_for_status()
         except requests.exceptions.RequestException as ex:
