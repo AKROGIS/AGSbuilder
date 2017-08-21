@@ -295,8 +295,8 @@ class Doc(object):
         if username is None or password is None:
             logger.warning("No credentials provided. Can't unpublish.")
             return
-
-        service_type = self.__get_service_type()
+        # TODO: check if service type is in the extended properties provided by the caller (from CSV file)
+        service_type = self.__get_service_type_from_server()
         if service_type is None:
             logger.warning("Unable to find service on server. Can't unpublish.")
             return
@@ -607,13 +607,42 @@ class Doc(object):
             except Exception as ex:
                 raise PublishException('Unable to upload the service: {0}'.format(ex))
 
-    def __get_service_type(self):
+    def __get_service_type_from_server(self):
         # TODO: Implement
         # if folder is None call /services?f=json
         # else: call /services/folder?f=json if folder is in /services?f=json resp['folders']
         # find service in response['services'] find service['serviceName'] = service, and grab the service['type']
         # do case insensitive compares
-        return "Mapserver"
+        logger.debug("Get service type from server %s, %s", self.server_url, self.service_path)
+        if self.server_url is None:
+            logger.debug("Server URL is undefined.")
+            return None
+
+        url = self.server_url + '/rest/services?f=json'
+        name = self.__service_name.lower()
+        if self.__service_folder_name is not None:
+            url = self.server_url + '/rest/services/folder?f=json'
+            name = self.__service_folder_name.lower() + '/' + self.__service_name.lower()
+        try:
+            json = requests.get(url).json()
+            logger.debug("Server response: %s", json)
+            # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
+            services = [service for service in json['services'] if service['name'].lower() == name]
+        except Exception as ex:
+            logger.warning("Failed to get service list from server, %s", ex)
+            return None
+        logger.debug("services found: %s", services)
+        if len(services) == 0:
+            logger.info("Service %s not found on server", self.__service_name)
+            return None
+        try:
+            service_type = services[0]['type']
+        except KeyError:
+            logger.error("Response from server was invalid (no service type), %s")
+            return None
+        logger.debug("services type found: %s", services)
+
+        return service_type
 
     # Private Class Methods
 
