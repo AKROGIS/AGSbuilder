@@ -12,3 +12,20 @@ copy the data to the server, but rather use a network link to get live data.
 It is still under development and is not yet functional.  
 It is currently written for ArcGis 10.x and python 2.7.  But Pro and python3
 is being considered.
+
+## Build
+
+There is no build required to deploy this project
+
+## Deploy
+
+1) Copy files to a server location
+2) Build file system (on GIS Team Drive) of services to publish
+3) Create CSV of special case service
+4) Edit configuration parameters
+5) Create and deploy a schedule task
+
+## Using
+
+The script can be run from the command line with the options as shown in
+[`publisher.py`](https://github.com/AKROGIS/AGSbuilder/blob/a51a3633759cbdc067fef5ba39dfde44a92de23b/publisher.py#L36-L75)
