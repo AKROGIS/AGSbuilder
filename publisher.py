@@ -1,5 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+Command line tool to sync published remote web services with local configuration.
+"""
+
 from __future__ import absolute_import, division, print_function, unicode_literals
+
+import argparse
+import logging
 import logging.config
+
 import config_logger
 from document_finder import Documents
 from publishable_doc import PublishException
@@ -30,7 +39,6 @@ def get_configuration_settings():
     config.admin_username = getattr(config, 'admin_username', None)
     config.admin_password = getattr(config, 'admin_password', None)
 
-    import argparse
     parser = argparse.ArgumentParser(description='Syncs a set of ArcGIS Web Services with source documents')
 
     if config.root_directory is None:

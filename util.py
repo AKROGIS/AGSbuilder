@@ -1,8 +1,18 @@
+# -*- coding: utf-8 -*-
+"""
+Utility functions for the AGS Builder Project.
+
+Requires the 3rd party `requests` module: `pip install requests`
+"""
+
 from __future__ import absolute_import, division, print_function, unicode_literals
-import os.path
+
+from io import open
 import logging
+import os
+
 import requests
-from io import open  # for python2/3 compatibility
+
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())

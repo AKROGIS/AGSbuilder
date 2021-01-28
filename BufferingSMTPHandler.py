@@ -21,6 +21,7 @@
 #
 """Test harness for the logging module. Tests BufferingSMTPHandler, an alternative implementation
 of SMTPHandler.
+# -*- coding: utf-8 -*-
 Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 """
 import logging

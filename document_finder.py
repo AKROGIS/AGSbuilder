@@ -1,7 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+Class for identifying documents to publish.
+"""
+
 from __future__ import absolute_import, division, print_function, unicode_literals
+
+import csv
 import logging
-import os.path
-from io import open  # for python2/3 compatibility
+import os
+import sys
+
 from publishable_doc import Doc
 import util
 

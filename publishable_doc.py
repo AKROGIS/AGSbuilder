@@ -1,8 +1,19 @@
+# -*- coding: utf-8 -*-
+"""
+Definition for a document publishable as a web service.
+"""
+
 from __future__ import absolute_import, division, print_function, unicode_literals
-import os.path
+
+from io import open
+import json
+import os
 import logging
+import xml.dom.minidom
+
+import arcpy
 import requests
-from io import open  # for python2/3 compatibility
+
 import util
 
 logger = logging.getLogger(__name__)
@@ -358,8 +369,6 @@ class Doc(object):
         if os.path.exists(self.__draft_file_name):
             self.__delete_file(self.__draft_file_name)
 
-        import arcpy
-
         source = self.path
         if self.__is_image_service:
             create_sddraft = arcpy.CreateImageSDDraft
@@ -441,7 +450,6 @@ class Doc(object):
         if self.__draft_analysis_result is not None:
             return
         try:
-            import arcpy
             logger.info("Begin arcpy.mapping.AnalyzeForSD(%s)", self.__draft_file_name)
             self.__draft_analysis_result = arcpy.mapping.AnalyzeForSD(self.__draft_file_name)
             logger.info("Done arcpy.mapping.AnalyzeForSD()")
@@ -453,7 +461,6 @@ class Doc(object):
         if self.__draft_analysis_result is not None:
             self.__simplify_analysis_results()
             try:
-                import json
                 with open(self.__issues_file_name, 'wb') as f:
                     f.write(json.dumps(self.__draft_analysis_result))
             except Exception as ex:
@@ -462,7 +469,6 @@ class Doc(object):
     def __get_analysis_result_from_cache(self):
         if self.__file_exists_and_is_newer(self.__issues_file_name, self.path):
             try:
-                import json
                 with open(self.__issues_file_name, 'rb') as f:
                     self.__draft_analysis_result = json.load(f)
             except Exception as ex:
@@ -521,7 +527,6 @@ class Doc(object):
             # the arcpy method will fail if the sd file exists
             self.__delete_file(self.__sd_file_name)
             try:
-                import arcpy
                 logger.info("Begin arcpy.StageService_server(%s, %s)", self.__draft_file_name, self.__sd_file_name)
                 arcpy.StageService_server(self.__draft_file_name, self.__sd_file_name)
                 logger.info("Done arcpy.StageService_server()")
@@ -537,7 +542,6 @@ class Doc(object):
         Need to check if this is required before calling.
         """
         logger.debug("Fixing draft file %s for replacement", self.__draft_file_name)
-        import xml.dom.minidom
 
         new_type = 'esriServiceDefinitionType_Replacement'
         file_name = self.__draft_file_name
@@ -600,7 +604,6 @@ class Doc(object):
         # only publish if we need to.
         if force or not self.is_live or self.__have_new_service_definition:
             try:
-                import arcpy
                 logger.info("Begin arcpy.UploadServiceDefinition_server(%s, %s)", self.__sd_file_name, conn)
                 arcpy.UploadServiceDefinition_server(self.__sd_file_name, conn)
                 logger.info("Done arcpy.UploadServiceDefinition_server()")
