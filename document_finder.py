@@ -233,14 +233,16 @@ class Documents(object):
         The file must have at least three columns which will be interpreted as text for
         a full file path to a service source, a service folder, and a service name"""
         try:
-            import csv
             history = []
-            with open(path, "rb") as f:
+            with Documents.__open_csv(path, "r") as f:
                 csv_reader = csv.reader(f)
                 header = csv_reader.next()
+                # We do not need to decode the binary Python 2 header.
                 if len(header) < 3:
                     raise IndexError("file does not have at least 3 rows")
                 for row in csv_reader:
+                    if sys.version_info[0] < 3:
+                        row = [s.decode("utf-8") for s in row]
                     history.append(row[:3])
             return history
         except Exception as ex:
@@ -253,21 +255,32 @@ class Documents(object):
 
         The first row of the file will be skipped (assumed to be a header row).
         The file must have at least X columns which will be interpreted as text for ..."""
+
         # TODO: define the service list file format
         try:
-            import csv
             services = []
-            with open(path, "rb") as f:
+            with Documents.__open_csv(path, "r") as f:
                 csv_reader = csv.reader(f)
                 header = csv_reader.next()
+                # We do not need to decode the binary Python 2 header.
                 if len(header) < 3:
                     raise IndexError("file does not have at least 3 rows")
                 for row in csv_reader:
+                    if sys.version_info[0] < 3:
+                        row = [s.decode("utf-8") for s in row] 
                     services.append(row[:3])
             return services
         except Exception as ex:
             logger.warning("Unable to parse the file %s: %s", path, ex)
             return None
+
+    @staticmethod
+    def __open_csv(filename, mode):
+        """Open a file for CSV mode that is compatible with unicode and Python 2/3"""
+
+        if sys.version_info[0] < 3:
+            return open(filename, mode + "b")
+        return open(filename, mode, encoding="utf8", newline="")
 
 
 def test_path():
