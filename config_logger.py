@@ -36,7 +36,7 @@ config = {
             "filename": "publisher.log",
         },
         "email": {
-            "class": "BufferingSMTPHandler.BufferingSMTPHandler",  # Bundle 100 messages into a single email
+            "class": "buffering_smtp_handler.BufferingSMTPHandler",  # Bundle 100 messages into a single email
             "level": "ERROR",
             "formatter": "detailed",
             "mailhost": "mailer.itc.nps.gov",
