@@ -60,10 +60,10 @@ They must be None, or quoted text
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-root_directory = 'c:/tmp/pub'
-history_file = 'c:/tmp/pub/history.csv'
-service_list = 'c:/tmp/pub/services.csv'
-server = 'c:/tmp/pub/server.ags'
+root_directory = "c:/tmp/pub"
+history_file = "c:/tmp/pub/history.csv"
+service_list = "c:/tmp/pub/services.csv"
+server = "c:/tmp/pub/server.ags"
 server_url = None
-admin_username = 'bigwig'
-admin_password = 'secret'
+admin_username = "bigwig"
+admin_password = "secret"

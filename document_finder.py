@@ -38,6 +38,7 @@ class Documents(object):
         if modified date of item is newer than (4)[item] or (2)[item] is different than 3[item]
             create new *.sd
     """
+
     def __init__(self, path=None, history=None, service_list=None, config=None):
         self.__path = None
         self.__history = None
@@ -104,11 +105,15 @@ class Documents(object):
         if new_value is None:
             return
         if isinstance(new_value, list):
-            if len(new_value) == 0 or (isinstance(new_value[0], tuple) and len(new_value[0]) == 3):
+            if len(new_value) == 0 or (
+                isinstance(new_value[0], tuple) and len(new_value[0]) == 3
+            ):
                 return
             else:
                 self.__history = None
-                logger.warning("History list must have 3-tuple members, Setting history to None")
+                logger.warning(
+                    "History list must have 3-tuple members, Setting history to None"
+                )
         else:
             if os.path.isfile(new_value):
                 self.__history = self.__get_history_from_file(new_value)
@@ -125,16 +130,22 @@ class Documents(object):
         If it is a path, then it should contain a csv file with source_path,service_folder,service_name"""
         if new_value == self.__service_list:
             return
-        logger.debug("setting service list from %s to %s", self.__service_list, new_value)
+        logger.debug(
+            "setting service list from %s to %s", self.__service_list, new_value
+        )
         self.__service_list = new_value
         if new_value is None:
             return
         if isinstance(new_value, list):
-            if len(new_value) == 0 or (isinstance(new_value[0], tuple) and len(new_value[0]) == 3):
+            if len(new_value) == 0 or (
+                isinstance(new_value[0], tuple) and len(new_value[0]) == 3
+            ):
                 return
             else:
                 self.__service_list = None
-                logger.warning("Service list must have 3-tuple members, Setting list to None")
+                logger.warning(
+                    "Service list must have 3-tuple members, Setting list to None"
+                )
         else:
             if os.path.isfile(new_value):
                 self.__service_list = self.__get_server_list_from_file(new_value)
@@ -159,24 +170,36 @@ class Documents(object):
             return []
         mxds = self.__filesystem_mxds
         if len(mxds) == 0:
-            logger.warning("No *.mxd files found, Unwilling to unpublish all without an override.")
+            logger.warning(
+                "No *.mxd files found, Unwilling to unpublish all without an override."
+            )
             # TODO: support an override to unpublish all?
             return []
         docs = []
         source_paths = set([path for _, path in mxds])
         service_paths = [util.service_path(path, folder) for folder, path in mxds]
-        service_paths = [(name if folder is None else folder + "/" + name).lower()
-                         for folder, name in service_paths]
+        service_paths = [
+            (name if folder is None else folder + "/" + name).lower()
+            for folder, name in service_paths
+        ]
         service_paths = set(service_paths)
         for path, folder, name in self.history:
             if path is None:
                 # check if folder/name matches what would come from one of our mxds, if so, then keep it
                 service_path = (name if folder is None else folder + "/" + name).lower()
                 if service_path not in service_paths:
-                    docs.append(Doc(path, folder=folder, service_name=name, config=self.__config))
+                    docs.append(
+                        Doc(
+                            path, folder=folder, service_name=name, config=self.__config
+                        )
+                    )
             else:
                 if path not in source_paths:
-                    docs.append(Doc(path, folder=folder, service_name=name, config=self.__config))
+                    docs.append(
+                        Doc(
+                            path, folder=folder, service_name=name, config=self.__config
+                        )
+                    )
         logger.debug("Found %s documents to UN-publish", len(docs))
         return docs
 
@@ -186,8 +209,11 @@ class Documents(object):
         mxds = []
         if self.path is not None and os.path.isdir(self.path):
             mxds = [(None, mxd) for mxd in self.__find_mxds_in_folder(self.path)]
-            folders = [name for name in os.listdir(self.path)
-                       if os.path.isdir(os.path.join(self.path, name))]
+            folders = [
+                name
+                for name in os.listdir(self.path)
+                if os.path.isdir(os.path.join(self.path, name))
+            ]
             for folder in folders:
                 path = os.path.join(self.path, folder)
                 mxds += [(folder, mxd) for mxd in self.__find_mxds_in_folder(path)]
@@ -219,7 +245,7 @@ class Documents(object):
     def __find_mxds_in_folder(folder):
         logger.debug("Searching %s for *.mxd files", folder)
         names = os.listdir(folder)
-        mxds = [name for name in names if os.path.splitext(name)[1].lower() == '.mxd']
+        mxds = [name for name in names if os.path.splitext(name)[1].lower() == ".mxd"]
         paths = [os.path.join(folder, mxd) for mxd in mxds]
         # make sure it is a file, and not some weird directory name
         mxd_filepaths = [path for path in paths if os.path.isfile(path)]
@@ -268,7 +294,7 @@ class Documents(object):
                     raise IndexError("file does not have at least 3 rows")
                 for row in csv_reader:
                     if sys.version_info[0] < 3:
-                        row = [s.decode("utf-8") for s in row] 
+                        row = [s.decode("utf-8") for s in row]
                     services.append(row[:3])
             return services
         except Exception as ex:
@@ -289,7 +315,8 @@ def test_path():
     for doc in docs.items_to_publish:
         print(doc.name, doc.service_path)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
     test_path()

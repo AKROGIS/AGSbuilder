@@ -25,10 +25,10 @@ def get_service_url_from_ags_file(path):
         logger.warning("No valid path provided to get_service_url_from_ags_file()")
         return None
 
-    url_start = 'http'
-    url_end = '/arcgis'
+    url_start = "http"
+    url_end = "/arcgis"
     result = set([])
-    with open(path, 'r', encoding='utf16') as f:
+    with open(path, "r", encoding="utf16") as f:
         text = f.read()
         # print(text)
         start_index = 0
@@ -54,13 +54,13 @@ def get_services_from_server(server_url):
     if server_url is None:
         logger.warning("Unable to get services (No server_url is defined)")
 
-    url = server_url + '/rest/services?f=json'
+    url = server_url + "/rest/services?f=json"
 
     try:
         json = requests.get(url).json()
         # sample response: {..., "folders":["folder1","folder2"], ...}
-        root_services = json['services']
-        folders = json['folders']
+        root_services = json["services"]
+        folders = json["folders"]
     except Exception as ex:
         logger.error("Failed to get services on %s: %s", server_url, ex)
         return None
@@ -80,15 +80,20 @@ def get_services_from_server_folder(server_url, folder):
         return None
 
     if folder is None:
-        url = server_url + '/rest/services?f=json'
+        url = server_url + "/rest/services?f=json"
     else:
-        url = server_url + '/rest/services/' + folder + '?f=json'
+        url = server_url + "/rest/services/" + folder + "?f=json"
     try:
         json = requests.get(url).json()
         # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
-        services = json['services']
+        services = json["services"]
     except Exception as ex:
-        logger.error("Failed to get services from server %s in folder %s: %s", server_url, folder, ex)
+        logger.error(
+            "Failed to get services from server %s in folder %s: %s",
+            server_url,
+            folder,
+            ex,
+        )
         return None
     return services
 
@@ -104,7 +109,7 @@ def service_path(mxd_path, folder=None):
     return new_folder, new_name
 
 
-def sanitize_service_name(name, replacement='_'):
+def sanitize_service_name(name, replacement="_"):
     """Replace all non alphanumeric characters with replacement
 
     The name can only contain alphanumeric characters and underscores.
@@ -115,4 +120,4 @@ def sanitize_service_name(name, replacement='_'):
     if name is None:
         return None
     clean_chars = [c if c.isalnum() else replacement for c in name]
-    return ''.join(clean_chars)[:120]
+    return "".join(clean_chars)[:120]

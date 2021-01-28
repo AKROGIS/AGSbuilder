@@ -10,43 +10,43 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 
 config = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'brief': {
-            'format':  '%(name)-12s: %(levelname)-8s %(message)s',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "brief": {
+            "format": "%(name)-12s: %(levelname)-8s %(message)s",
         },
-        'detailed': {
-            'format':  '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-            'datefmt': '%m-%d %H:%M:%S'
-        }
+        "detailed": {
+            "format": "%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+            "datefmt": "%m-%d %H:%M:%S",
+        },
     },
-    'handlers': {
+    "handlers": {
         # command line arguments (--verbose and --debug will change the level of *first* handler to INFO and DEBUG)
-        'console': {
-            'class':     'logging.StreamHandler',
-            'level':     'WARNING',
-            'formatter': 'brief',
-            'stream':    'ext://sys.stdout'
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "WARNING",
+            "formatter": "brief",
+            "stream": "ext://sys.stdout",
         },
-        'file': {
-            'class':     'logging.FileHandler',
-            'level':     'INFO',
-            'formatter': 'detailed',
-            'filename':  'publisher.log'
+        "file": {
+            "class": "logging.FileHandler",
+            "level": "INFO",
+            "formatter": "detailed",
+            "filename": "publisher.log",
         },
-        'email': {
-            'class':     'BufferingSMTPHandler.BufferingSMTPHandler',  # Bundle 100 messages into a single email
-            'level':     'ERROR',
-            'formatter': 'detailed',
-            'mailhost':  'mailer.itc.nps.gov',
-            'fromaddr':  'regan_sarwas@nps.gov',
-            'toaddrs':   ['regan_sarwas@nps.gov'],
-            'subject':   'Errors running the ArcGIS Service Builder/Publisher'
-        }
+        "email": {
+            "class": "BufferingSMTPHandler.BufferingSMTPHandler",  # Bundle 100 messages into a single email
+            "level": "ERROR",
+            "formatter": "detailed",
+            "mailhost": "mailer.itc.nps.gov",
+            "fromaddr": "regan_sarwas@nps.gov",
+            "toaddrs": ["regan_sarwas@nps.gov"],
+            "subject": "Errors running the ArcGIS Service Builder/Publisher",
+        },
     },
-    'root': {
-        'level': 'NOTSET',
-        'handlers': ['console', 'file']  # , 'email']  # only send emails in production
-    }
+    "root": {
+        "level": "NOTSET",
+        "handlers": ["console", "file"],  # , 'email']  # only send emails in production
+    },
 }
