@@ -461,7 +461,7 @@ class Doc(object):
         if self.__draft_analysis_result is not None:
             self.__simplify_analysis_results()
             try:
-                with open(self.__issues_file_name, 'wb') as f:
+                with open(self.__issues_file_name, 'w', encoding="utf-8") as f:
                     f.write(json.dumps(self.__draft_analysis_result))
             except Exception as ex:
                 logger.warning("Unable to cache the analysis results: %s", ex)
@@ -469,7 +469,7 @@ class Doc(object):
     def __get_analysis_result_from_cache(self):
         if self.__file_exists_and_is_newer(self.__issues_file_name, self.path):
             try:
-                with open(self.__issues_file_name, 'rb') as f:
+                with open(self.__issues_file_name, 'r', encoding="utf-8") as f:
                     self.__draft_analysis_result = json.load(f)
             except Exception as ex:
                 logger.warning('Unable to load or parse the cached analysis results %s', ex)
@@ -554,7 +554,7 @@ class Doc(object):
                     logger.debug("Update tag %s from %s to %s", desc.firstChild, desc.firstChild.data, new_type)
                     desc.firstChild.data = new_type
 
-        with open(file_name, u'wb') as f:
+        with open(file_name, 'w', encoding="utf-8") as f:
             xdoc.writexml(f)
         logger.debug("Draft file fixed.")
 

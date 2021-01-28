@@ -19,9 +19,8 @@ logger.addHandler(logging.NullHandler())
 
 
 def get_service_url_from_ags_file(path):
-    """find and return the first 'URL' string in the binary file at path
+    """find and return the first 'URL' string in the utf16 encoded file at path."""
 
-    The ags file is in utf16, so decode properly to do string searches"""
     if path is None or not os.path.exists(path):
         logger.warning("No valid path provided to get_service_url_from_ags_file()")
         return None
@@ -29,9 +28,8 @@ def get_service_url_from_ags_file(path):
     url_start = 'http'
     url_end = '/arcgis'
     result = set([])
-    with open(path, 'rb') as f:
-        data = f.read()
-        text = data.decode('utf16')
+    with open(path, 'r', encoding='utf16') as f:
+        text = f.read()
         # print(text)
         start_index = 0
         while 0 <= start_index:
