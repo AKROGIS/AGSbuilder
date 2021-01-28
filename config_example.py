@@ -6,7 +6,7 @@ Note:
   relative paths are resolved from the working directory of the process that
   executes the script, not necessarily the location of the script.  Full paths
   are recommended. Paths can use a unix style forward slash (/) as a directory
-  separator otherwise it must be a raw string (r"c:\tmp") to avoid special
+  separator otherwise it must be a raw string (prefix with r) to avoid special
   meaning of back slash (\)
 
 # root_directory
@@ -24,7 +24,7 @@ None. If no history file is provided, the app will query the server to get a lis
 of current services to act as the history list.  Any services found on the server
 that are not in the root_folder and/or service_list will be unpublished.
 The file must have a header row and at least 3 columns the first of which must be
-string values for: source_path, service_folder, service_name 
+string values for: source_path, service_folder, service_name.
 
 # service_list
 
@@ -34,20 +34,20 @@ This file allows the user to publish source documents not in the root_folder, pr
 additional or non-default publishing parameters, and to specify if the service should
 be deleted or unconditionally re-published. service_list must be a quoted path or None.
 The file must have a header row and at least XX columns the first of which must be
-string values for: TODO: define the service_list file format 
+string values for: TODO: define the service_list file format.
 
 # server
 
 The default server type/connection file.  Must be a quoted string or None
 A quoted string should be either 'MY_HOSTED_SERVICES' or a valid file path.
 if this setting is missing, None or any other non-valid value, it will default
-to 'MY_HOSTED_SERVICES'
+to 'MY_HOSTED_SERVICES'.
 
 # server_url
 
 The Server URL is used to check if a service exists before publishing,
 And to connect to the server for unpublishing.  If the server URL is not
-provided, it will be extracted from the AGS file provided in the service property
+provided, it will be extracted from the AGS file provided in the service property.
 
 # admin_username / admin_password
 
@@ -55,7 +55,7 @@ The Admin username and password are used to connect to the server_url with the
 ArcGIS ReST API to Stop/Delete services.  Without these properties, the
 unpublish feature will not be available.  If they are None or not provided,
 they can be provided on the command line.
-They must be None, or quoted text
+They must be None, or quoted text.
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals

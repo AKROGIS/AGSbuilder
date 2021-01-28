@@ -22,7 +22,8 @@ config = {
         },
     },
     "handlers": {
-        # command line arguments (--verbose and --debug will change the level of *first* handler to INFO and DEBUG)
+        # command line arguments (--verbose and --debug will change the level of
+        # first handler to INFO and DEBUG)
         "console": {
             "class": "logging.StreamHandler",
             "level": "WARNING",
@@ -36,7 +37,10 @@ config = {
             "filename": "publisher.log",
         },
         "email": {
-            "class": "buffering_smtp_handler.BufferingSMTPHandler",  # Bundle 100 messages into a single email
+            # Bundle 100 messages into a single email
+            "class": "buffering_smtp_handler.BufferingSMTPHandler",
+            # Separate email for each message
+            # 'class':    'logging.handlers.SMTPHandler',
             "level": "ERROR",
             "formatter": "detailed",
             "mailhost": "mailer.itc.nps.gov",
@@ -47,6 +51,8 @@ config = {
     },
     "root": {
         "level": "NOTSET",
-        "handlers": ["console", "file"],  # , 'email']  # only send emails in production
+        # Do not send emails when testing
+        "handlers": ["console", "file"]
+        # 'handlers': ['console', 'file', 'email']
     },
 }
