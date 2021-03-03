@@ -20,11 +20,23 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+# broad exception catching will be logged; reraise-from is not available in Python2
+# pylint: disable=broad-except,raise-missing-from
+
+
 class PublishException(Exception):
     """Raise when unable to Make a change on the server"""
 
 
+# object inheritance is maintained for Python2 compatibility
+# pylint: disable=useless-object-inheritance
+
+
 class Doc(object):
+    """An ArcGIS document that is publishable as an ArcGIS Service."""
+
+    # pylint: disable=too-many-instance-attributes,too-many-arguments
+
     def __init__(
         self,
         path,
@@ -50,7 +62,8 @@ class Doc(object):
         self.__sd_file_name = None
         self.__issues_file_name = None
         self.__is_image_service = False
-        # All instance attributes should be defined in __init__() (even if they are set in a property setter)
+        # All instance attributes should be defined in __init__()
+        # (even if they are set in a property setter)
         self.__path = None  # (re)set in path.setter
         self.__service_name = None  # (re)set in path.setter
         self.path = path
@@ -98,27 +111,31 @@ class Doc(object):
 
     @property
     def path(self):
+        """Return the filesystem path to this document."""
         return self.__path
 
     @path.setter
     def path(self, new_value):
         """Make sure new_value is text or set to None
 
-        Note: setting path will also set a default value for the service name, if you want a different service_name
+        Note: setting path will also set a default value for the service name,
+        if you want a different service_name
         you must set it explicitly __after__ setting the path
 
         Files are based on ArcGIS Desktop mxd files and not ArcGIS Pro project files.
         ArcGIS Pro 2.0 does not support publishing to a local ArcGIS Server
         """
         try:
-            # FIXME: if this is an image service then it is a dataset a fgdb (which isn't a real file)
+            # FIXME: if this is an image service then it is a dataset a fgdb
+            # (which isn't a real file)
             # TODO: set self.__is_image_service here
             if os.path.exists(new_value):
                 self.__path = new_value
                 base, ext = os.path.splitext(new_value)
                 self.__basename = os.path.basename(base)
                 self.__ext = ext
-                # TODO: Allow draft and sd to be created in a new location from settings (path may be read only)
+                # TODO: Allow draft and sd to be created in a new location from settings
+                # (path may be read only)
                 # TODO: This will not work for image services
                 self.__draft_file_name = base + ".sddraft"
                 self.__sd_file_name = base + ".sd"
@@ -136,6 +153,7 @@ class Doc(object):
 
     @property
     def folder(self):
+        """Returns the name of the ArcGIS Services folder for this document."""
         return self.__folder
 
     @folder.setter
@@ -158,6 +176,7 @@ class Doc(object):
 
     @property
     def service_name(self):
+        """Returns the name of the ArcGIS service for this document."""
         return self.__service_name
 
     @service_name.setter
@@ -177,10 +196,10 @@ class Doc(object):
 
     @property
     def server(self):
+        """Return the server name."""
         if self.__service_server_type == "MY_HOSTED_SERVICES":
             return self.__service_server_type
-        else:
-            return self.__service_connection_file_path
+        return self.__service_connection_file_path
 
     @server.setter
     def server(self, new_value):
@@ -195,10 +214,12 @@ class Doc(object):
         self.__service_server_type = hosted
         self.__service_connection_file_path = None
 
-        # if you want to do a case insensitive compare, be careful, as new_value may not be text.
+        # if you want to do a case insensitive compare, be careful,
+        # as new_value may not be text.
         if new_value is None or new_value == hosted:
             logger.debug(
-                "Setting document %s service_server_type to %s and service_connection_file_path to %s",
+                ("Setting document %s service_server_type "
+                "to %s and service_connection_file_path to %s"),
                 self.name,
                 self.__service_server_type,
                 self.__service_connection_file_path,
@@ -231,18 +252,21 @@ class Doc(object):
 
     @property
     def name(self):
+        """Return the service name of this document."""
         if self.folder is not None and self.__basename is not None:
             return self.folder + "/" + self.__basename
         return self.__basename
 
     @property
     def service_path(self):
+        """Return the service path for this document."""
         if self.__service_folder_name is not None and self.__service_name is not None:
             return self.__service_folder_name + "/" + self.__service_name
         return self.__service_name
 
     @property
     def is_live(self):
+        "Return true if the service for this document exists."
         if self.__service_is_live is None:
             self.__service_is_live = self.__check_server_for_service()
         return self.__service_is_live
@@ -253,10 +277,11 @@ class Doc(object):
         Check if a source is ready to publish to the server.
 
         Returns True or False, should not throw any exceptions.
-        May need to create a draft service definition to analyze the file.  Any exceptions will be swallowed.
-        If there is an existing sd file newer than the source, then we are ready to publish, otherwise
-        create a draft file (if necessary) and analyze.  If there are no errors in the analysis then it
-        is ready to publish.
+        May need to create a draft service definition to analyze the file.  Any
+        exceptions will be swallowed. If there is an existing sd file newer than
+        the source, then we are ready to publish, otherwise create a draft file
+        (if necessary) and analyze.  If there are no errors in the analysis then
+        it is ready to publish.
 
         :return: Bool
         """
@@ -290,9 +315,7 @@ class Doc(object):
             )
             return False
 
-        if "errors" in self.__draft_analysis_result and 0 < len(
-            self.__draft_analysis_result["errors"]
-        ):
+        if "errors" in self.__draft_analysis_result and self.__draft_analysis_result["errors"]:
             logger.debug("Service definition draft has errors, NOT ready to publish.")
             return False
         return True
@@ -302,9 +325,10 @@ class Doc(object):
         """Provide a list of errors, warning and messages about publishing this document
 
         The issues are created when a draft file is created or re-analyzed.
-        Since the draft file is deleted when a sd file is created, the analysis results are
-        cached.  The cached copy is used if the sd file is newer than the map.
-        If there is not cached copy, or the sd file is out of date, the draft file will be created or re-analyzed."""
+        Since the draft file is deleted when a sd file is created, the analysis
+        results are cached.  The cached copy is used if the sd file is newer
+        than the map. If there is not cached copy, or the sd file is out of date,
+        the draft file will be created or re-analyzed."""
         if self.__draft_analysis_result is None:
             self.__get_analysis_result_from_cache()
 
@@ -318,13 +342,14 @@ class Doc(object):
             error = "ERRORS:\n  "
             if self.path is None:
                 return error + "Path to service source is not valid"
-            else:
-                return error + "Unable to get issues"
+            return error + "Unable to get issues"
 
         return self.__stringify_analysis_results()
 
     @property
     def errors(self):
+        """Return the errors (as text) that have occurred."""
+
         issues = self.all_issues
         if "ERRORS:" not in issues:
             return ""
@@ -333,6 +358,8 @@ class Doc(object):
     # Public Methods
 
     def publish(self):
+        """Publish the document to the server."""
+
         self.__publish_service()
 
     def unpublish(self, dry_run=False):
@@ -344,7 +371,8 @@ class Doc(object):
         ref: http://resources.arcgis.com/en/help/rest/apiref/index.html
         of: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html
         """
-        # TODO: self.service_path is not valid if source path doesn't exist (typical case for delete)
+        # TODO: self.service_path is not valid if source path doesn't exist
+        # (typical case for delete)
         logger.debug("Called unpublish %s on %s", self.service_path, self.server_url)
         if self.server_url is None or self.service_path is None:
             logger.warning(
@@ -357,7 +385,8 @@ class Doc(object):
         if username is None or password is None:
             logger.warning("No credentials provided. Can't unpublish.")
             return
-        # TODO: check if service type is in the extended properties provided by the caller (from CSV file)
+        # TODO: check if service type is in the extended properties provided by the caller
+        # (from CSV file)
         service_type = self.__get_service_type_from_server()
         if service_type is None:
             logger.warning("Unable to find service on server. Can't unpublish.")
@@ -380,11 +409,8 @@ class Doc(object):
         logger.debug("Unpublish command: %s", url)
         logger.debug("Unpublish data: %s", data)
         if dry_run:
-            print(
-                "Prepared to delete %s from the %s".format(
-                    self.service_path, self.server_url
-                )
-            )
+            msg = "Prepared to delete {0} from the {1}"
+            print(msg.format(self.service_path, self.server_url))
             return
         try:
             logger.info("Attempting to delete %s from the server", self.service_path)
@@ -405,15 +431,18 @@ class Doc(object):
 
         Note: a *.sddraft file is deleted once it is used to create a *.sd file
 
-        ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/createimagesddraft.htm
-        ref: http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm
+        ref:
+        http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-functions/createimagesddraft.htm
+        http://desktop.arcgis.com/en/arcmap/latest/analyze/arcpy-mapping/createmapsddraft.htm
 
         IMPORTANT NOTES
          * ArcGIS Pro has renamed the mapping module from arcpy.mapping to arcpy.mp
-         * as of 2.0, arcpy.mp.CreateMapSDDraft only support MY_HOSTED_SERVICES. it does NOT support ArcGIS Server
-         * arcpy.mp.MapDocument() does not exist, get the input to CreateMapSDDraft() from listMaps on a
-             project (*.aprx) file or from arcpy.mp.LayerFile(r"....lyrx").  If you have an *.mxd, you must first
-             import it into a project file to get a map object.
+         * as of 2.0, arcpy.mp.CreateMapSDDraft only support MY_HOSTED_SERVICES.
+           it does NOT support ArcGIS Server
+         * arcpy.mp.MapDocument() does not exist, get the input to CreateMapSDDraft()
+           from listMaps on a project (*.aprx) file or from arcpy.mp.LayerFile(r"....lyrx").
+           If you have an *.mxd, you must first import it into a project file to
+           get a map object.
         """
         logger.debug("Creating Draft Service Definition from %s", self.path)
 
@@ -449,7 +478,7 @@ class Doc(object):
 
         try:
             logger.info("Begin arcpy.createSDDraft(%s)", self.path)
-            r = create_sddraft(
+            result = create_sddraft(
                 source,
                 self.__draft_file_name,
                 self.__service_name,
@@ -461,7 +490,7 @@ class Doc(object):
                 self.__service_tags,
             )
             logger.info("Done arcpy.createSDDraft()")
-            self.__draft_analysis_result = r
+            self.__draft_analysis_result = result
             self.__have_draft = True
             self.__simplify_and_cache_analysis_results()
         except Exception as ex:
@@ -489,9 +518,9 @@ class Doc(object):
         if self.__service_folder_name is not None:
             # Check if the folder is valid
             try:
-                json = requests.get(url).json()
+                data = requests.get(url).json()
                 # sample response: {..., "folders":["folder1","folder2"], ...}
-                folders = [folder.lower() for folder in json["folders"]]
+                folders = [folder.lower() for folder in data["folders"]]
             except Exception as ex:
                 logger.warning(
                     "Failed to check for service, %s. Assume service exists", ex
@@ -512,9 +541,10 @@ class Doc(object):
                 return False
         logger.debug("looking for services at: %s", url)
         try:
-            json = requests.get(url).json()
-            # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
-            services = [service["name"].lower() for service in json["services"]]
+            data = requests.get(url).json()
+            # sample response: {..., "services":
+            #  [{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
+            services = [service["name"].lower() for service in data["services"]]
         except Exception as ex:
             logger.warning("Failed to check for service, %s. Assume service exists", ex)
             return True
@@ -553,16 +583,16 @@ class Doc(object):
         if self.__draft_analysis_result is not None:
             self.__simplify_analysis_results()
             try:
-                with open(self.__issues_file_name, "w", encoding="utf-8") as f:
-                    f.write(json.dumps(self.__draft_analysis_result))
+                with open(self.__issues_file_name, "w", encoding="utf-8") as out_file:
+                    out_file.write(json.dumps(self.__draft_analysis_result))
             except Exception as ex:
                 logger.warning("Unable to cache the analysis results: %s", ex)
 
     def __get_analysis_result_from_cache(self):
         if self.__file_exists_and_is_newer(self.__issues_file_name, self.path):
             try:
-                with open(self.__issues_file_name, "r", encoding="utf-8") as f:
-                    self.__draft_analysis_result = json.load(f)
+                with open(self.__issues_file_name, "r", encoding="utf-8") as in_file:
+                    self.__draft_analysis_result = json.load(in_file)
             except Exception as ex:
                 logger.warning(
                     "Unable to load or parse the cached analysis results %s", ex
@@ -595,14 +625,14 @@ class Doc(object):
         for key in ("messages", "warnings", "errors"):
             if key in self.__draft_analysis_result:
                 issues = self.__draft_analysis_result[key]
-                if 0 < len(issues):
+                if issues:
                     text += key.upper() + ":\n"
                     for issue in issues:
                         text += "  {0} (code {1})\n".format(
                             issue["text"], issue["code"]
                         )
                         layers = issue["layers"]
-                        if 0 < len(layers):
+                        if layers:
                             text += "    applies to layers: {0}\n".format(
                                 ",".join(layers)
                             )
@@ -625,7 +655,8 @@ class Doc(object):
             )
 
         if not self.__have_service_definition:
-            # I do not have a service definition that is newer than the map/draft, but I might have an old version
+            # I do not have a service definition that is newer than the map/draft,
+            # but I might have an old version
             # the arcpy method will fail if the sd file exists
             self.__delete_file(self.__sd_file_name)
             try:
@@ -654,8 +685,8 @@ class Doc(object):
         new_type = "esriServiceDefinitionType_Replacement"
         file_name = self.__draft_file_name
 
-        xdoc = xml.dom.minidom.parse(file_name)
-        descriptions = xdoc.getElementsByTagName("Type")
+        x_doc = xml.dom.minidom.parse(file_name)
+        descriptions = x_doc.getElementsByTagName("Type")
         for desc in descriptions:
             if desc.parentNode.tagName == "SVCManifest":
                 if desc.hasChildNodes():
@@ -667,8 +698,8 @@ class Doc(object):
                     )
                     desc.firstChild.data = new_type
 
-        with open(file_name, "w", encoding="utf-8") as f:
-            xdoc.writexml(f)
+        with open(file_name, "w", encoding="utf-8") as out_file:
+            x_doc.writexml(out_file)
         logger.debug("Draft file fixed.")
 
     def __publish_service(self, force=False):
@@ -676,22 +707,27 @@ class Doc(object):
 
         """Publish Service Definition
 
-        Uploads and publishes a GIS service to a specified GIS server based on a staged service definition (.sd) file.
+        Uploads and publishes a GIS service to a specified GIS server based on a
+        staged service definition (.sd) file.
         http://desktop.arcgis.com/en/arcmap/latest/tools/server-toolbox/upload-service-definition.htm
 
-        arcpy.UploadServiceDefinition_server (in_sd_file, in_server, {in_service_name}, {in_cluster}, {in_folder_type},
-           {in_folder}, {in_startupType}, {in_override}, {in_my_contents}, {in_public}, {in_organization}, {in_groups})
+        arcpy.UploadServiceDefinition_server (in_sd_file, in_server, {in_service_name},
+           {in_cluster}, {in_folder_type}, {in_folder}, {in_startupType}, {in_override},
+           {in_my_contents}, {in_public}, {in_organization}, {in_groups})
 
         server can be one of the following
-        A name of a server connection in ArcCatalog; i.e. server = r'GIS Servers/arcgis on my_server (publisher)'
+        A name of a server connection in ArcCatalog; i.e.
+          server = r'GIS Servers/arcgis on my_server (publisher)'
         A full path to an ArcGIS Server connection file (*.ags) created in ArcCatalog;
-          i.e. server = r'C:\path\to\my\connection.ags'
-        A relative path (relative to the cwd of the process running the script) to an ArcGIS Server connection
+          i.e. server = r'C:/path/to/my/connection.ags'
+        A relative path (relative to the cwd of the process running the script)
+          to an ArcGIS Server connection
           file (*.ags) created in ArcCatalog
-        'My Hosted Services' to publish to AGOL or Portal (you must be signed in to one or the other for this to work.)
+        'My Hosted Services' to publish to AGOL or Portal (you must be signed in
+          to one or the other for this to work.)
 
-        sd_file (A service definition (.sd) contains all the information needed to publish a GIS service) can be
-        A full path to an sd file
+        sd_file (A service definition (.sd) contains all the information needed
+        to publish a GIS service) can be A full path to an sd file
         A relative path (relative to the cwd of the process running the script) to an sd file
         A relative path (relative to the arcpy.env.workspace setting) to an sd file
 
@@ -733,7 +769,8 @@ class Doc(object):
         # TODO: Implement
         # if folder is None call /services?f=json
         # else: call /services/folder?f=json if folder is in /services?f=json resp['folders']
-        # find service in response['services'] find service['serviceName'] = service, and grab the service['type']
+        # find service in response['services']
+        #   find service['serviceName'] = service, and grab the service['type']
         # do case insensitive compares
         logger.debug(
             "Get service type from server %s, %s", self.server_url, self.service_path
@@ -750,12 +787,13 @@ class Doc(object):
                 self.__service_folder_name.lower() + "/" + self.__service_name.lower()
             )
         try:
-            json = requests.get(url).json()
-            logger.debug("Server response: %s", json)
-            # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
+            data = requests.get(url).json()
+            logger.debug("Server response: %s", data)
+            # sample response: {..., "services":
+            #  [{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
             services = [
                 service
-                for service in json["services"]
+                for service in data["services"]
                 if service["name"].lower() == name
             ]
         except Exception as ex:
@@ -812,7 +850,7 @@ class Doc(object):
             "f": "json",
             "username": username,
             "password": password,
-            "client": "requestip",
+            "client": "request_ip",
             "expiration": "60",
         }
         try:
