@@ -16,6 +16,9 @@ import util
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+# broad exception catching will be logged.
+# pylint: disable=broad-except
+
 
 class Documents(object):
     """
@@ -72,6 +75,7 @@ class Documents(object):
 
     @property
     def path(self):
+        """Return the path to the document store (where the finder will look)."""
         return self.__path
 
     @path.setter
@@ -96,8 +100,12 @@ class Documents(object):
 
     @history.setter
     def history(self, new_value):
-        """Can be a path, or a list of tuples
-        If it is a path, then it should contain a csv file with source_path,service_folder,service_name"""
+        """Set the history.  Can be a path, or a list of tuples.
+
+        If it is a path, then it should contain a csv file with
+        source_path,service_folder,service_name
+        """
+
         if new_value == self.__history:
             return
         logger.debug("setting history from %s to %s", self.__history, new_value)
@@ -126,8 +134,11 @@ class Documents(object):
 
     @service_list.setter
     def service_list(self, new_value):
-        """Can be a path, or a list of tuples
-        If it is a path, then it should contain a csv file with source_path,service_folder,service_name"""
+        """set the service list. Can be a path, or a list of tuples.
+
+        If it is a path, then it should contain a csv file with
+        source_path,service_folder,service_name
+        """
         if new_value == self.__service_list:
             return
         logger.debug(
@@ -165,6 +176,8 @@ class Documents(object):
 
     @property
     def items_to_unpublish(self):
+        """Returns a list documents to un-publish."""
+
         # TODO: unpublish documents flagged in the spreadsheet
         if self.history is None:
             return []
@@ -185,7 +198,8 @@ class Documents(object):
         service_paths = set(service_paths)
         for path, folder, name in self.history:
             if path is None:
-                # check if folder/name matches what would come from one of our mxds, if so, then keep it
+                # check if folder/name matches what would come from one of
+                # our mxds, if so, then keep it.
                 service_path = (name if folder is None else folder + "/" + name).lower()
                 if service_path not in service_paths:
                     docs.append(
@@ -261,9 +275,9 @@ class Documents(object):
         a full file path to a service source, a service folder, and a service name"""
         try:
             history = []
-            with Documents.__open_csv(path, "r") as f:
-                csv_reader = csv.reader(f)
-                header = csv_reader.next()
+            with Documents.__open_csv(path, "r") as csv_file:
+                csv_reader = csv.reader(csv_file)
+                header = next(csv_reader)
                 # We do not need to decode the binary Python 2 header.
                 if len(header) < 3:
                     raise IndexError("file does not have at least 3 rows")
@@ -286,8 +300,8 @@ class Documents(object):
         # TODO: define the service list file format
         try:
             services = []
-            with Documents.__open_csv(path, "r") as f:
-                csv_reader = csv.reader(f)
+            with Documents.__open_csv(path, "r") as csv_file:
+                csv_reader = csv.reader(csv_file)
                 header = csv_reader.next()
                 # We do not need to decode the binary Python 2 header.
                 if len(header) < 3:
@@ -311,6 +325,7 @@ class Documents(object):
 
 
 def test_path():
+    """Test the document finder."""
     docs = Documents(path="C:/tmp/ags_test")
     for doc in docs.items_to_publish:
         print(doc.name, doc.service_path)

@@ -22,7 +22,9 @@ logger.addHandler(logging.NullHandler())
 
 
 def get_service_url_from_ags_file(path):
-    """find and return the first 'URL' string in the utf16 encoded file at path."""
+    """Find and return the first 'URL' string in the utf16 encoded file at path.
+
+    Will return None with unexpected input or results."""
 
     if path is None or not os.path.exists(path):
         logger.warning("No valid path provided to get_service_url_from_ags_file()")
@@ -74,6 +76,7 @@ def get_services_from_server(server_url):
         if folder_services is None:
             return None
         services += [(folder, service) for service in folder_services]
+    return services
 
 
 def get_services_from_server_folder(server_url, folder):
