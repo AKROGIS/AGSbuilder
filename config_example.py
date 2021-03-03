@@ -6,7 +6,12 @@ A collection of configuration properties.
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 class Config(object):
-    """Namespace for configuration parameters. Edit as needed."""
+    """Namespace for configuration parameters. Edit as needed.
+
+    All properties are require, however any property can be set to None.
+    If a property is set to none, then there will be no default for that
+    command line option.
+    """
 
     # pylint: disable=useless-object-inheritance,too-few-public-methods
 
