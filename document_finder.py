@@ -19,6 +19,8 @@ logger.addHandler(logging.NullHandler())
 # broad exception catching will be logged.
 # pylint: disable=broad-except
 
+# object inheritance is maintained for Python2 compatibility
+# pylint: disable=useless-object-inheritance
 
 class Documents(object):
     """
@@ -41,6 +43,8 @@ class Documents(object):
         if modified date of item is newer than (4)[item] or (2)[item] is different than 3[item]
             create new *.sd
     """
+
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, path=None, history=None, service_list=None, config=None):
         self.__path = None
@@ -117,11 +121,10 @@ class Documents(object):
                 isinstance(new_value[0], tuple) and len(new_value[0]) == 3
             ):
                 return
-            else:
-                self.__history = None
-                logger.warning(
-                    "History list must have 3-tuple members, Setting history to None"
-                )
+            self.__history = None
+            logger.warning(
+                "History list must have 3-tuple members, Setting history to None"
+            )
         else:
             if os.path.isfile(new_value):
                 self.__history = self.__get_history_from_file(new_value)
@@ -152,11 +155,10 @@ class Documents(object):
                 isinstance(new_value[0], tuple) and len(new_value[0]) == 3
             ):
                 return
-            else:
-                self.__service_list = None
-                logger.warning(
-                    "Service list must have 3-tuple members, Setting list to None"
-                )
+            self.__service_list = None
+            logger.warning(
+                "Service list must have 3-tuple members, Setting list to None"
+            )
         else:
             if os.path.isfile(new_value):
                 self.__service_list = self.__get_server_list_from_file(new_value)
@@ -189,6 +191,8 @@ class Documents(object):
             # TODO: support an override to unpublish all?
             return []
         docs = []
+        # pylint: disable=consider-using-set-comprehension
+        # not available in Python2
         source_paths = set([path for _, path in mxds])
         service_paths = [util.service_path(path, folder) for folder, path in mxds]
         service_paths = [
