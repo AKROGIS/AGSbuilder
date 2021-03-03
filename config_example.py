@@ -5,6 +5,7 @@ A collection of configuration properties.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+
 class Config(object):
     """Namespace for configuration parameters. Edit as needed.
 
@@ -48,7 +49,6 @@ class Config(object):
     # The file must have a header row and at least XX columns the first of which must be
     # string values for: TODO: define the service_list file format.
     service_list = "c:/tmp/pub/services.csv"
-
 
     # server
     # The default server type/connection file.  Must be a quoted string or None

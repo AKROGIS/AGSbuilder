@@ -218,8 +218,10 @@ class Doc(object):
         # as new_value may not be text.
         if new_value is None or new_value == hosted:
             logger.debug(
-                ("Setting document %s service_server_type "
-                "to %s and service_connection_file_path to %s"),
+                (
+                    "Setting document %s service_server_type "
+                    "to %s and service_connection_file_path to %s"
+                ),
                 self.name,
                 self.__service_server_type,
                 self.__service_connection_file_path,
@@ -315,7 +317,10 @@ class Doc(object):
             )
             return False
 
-        if "errors" in self.__draft_analysis_result and self.__draft_analysis_result["errors"]:
+        if (
+            "errors" in self.__draft_analysis_result
+            and self.__draft_analysis_result["errors"]
+        ):
             logger.debug("Service definition draft has errors, NOT ready to publish.")
             return False
         return True

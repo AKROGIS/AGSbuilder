@@ -22,6 +22,7 @@ logger.addHandler(logging.NullHandler())
 # object inheritance is maintained for Python2 compatibility
 # pylint: disable=useless-object-inheritance
 
+
 class Documents(object):
     """
     Input:
