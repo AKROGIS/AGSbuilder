@@ -17,6 +17,9 @@ import requests
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+# broad exception catching is being logged.
+# pylint: disable=broad-except
+
 
 def get_service_url_from_ags_file(path):
     """find and return the first 'URL' string in the utf16 encoded file at path."""
@@ -28,27 +31,28 @@ def get_service_url_from_ags_file(path):
     url_start = "http"
     url_end = "/arcgis"
     result = set([])
-    with open(path, "r", encoding="utf16") as f:
-        text = f.read()
+    with open(path, "r", encoding="utf16") as in_file:
+        text = in_file.read()
         # print(text)
         start_index = 0
-        while 0 <= start_index:
+        while start_index >= 0:
             start_index = text.find(url_start, start_index)
             # print('start_index', start_index)
-            if 0 <= start_index:
+            if start_index >= 0:
                 end_index = text.find(url_end, start_index)
                 # print('end_index', end_index)
-                if 0 <= end_index:
+                if end_index >= 0:
                     url = text[start_index:end_index] + url_end
                     result.add(url)
                     start_index = end_index
     if len(result) == 1:
         return list(result)[0]
-    else:
-        return None
+    return None
 
 
 def get_services_from_server(server_url):
+    """Return a list of the ArcGIS services on server_url."""
+
     logger.debug("Get list of services on server %s", server_url)
 
     if server_url is None:
@@ -73,6 +77,8 @@ def get_services_from_server(server_url):
 
 
 def get_services_from_server_folder(server_url, folder):
+    """Return a list of the ArcGIS services in the folder on server_url."""
+
     logger.debug("Get list of services on server %s in folder %s", server_url, folder)
 
     if server_url is None:
@@ -85,7 +91,8 @@ def get_services_from_server_folder(server_url, folder):
         url = server_url + "/rest/services/" + folder + "?f=json"
     try:
         json = requests.get(url).json()
-        # sample response: {..., "services":[{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
+        # sample response: {..., "services":
+        #    [{"name": "WebMercator/DENA_Final_IFSAR_WM", "type": "ImageServer"}]}
         services = json["services"]
     except Exception as ex:
         logger.error(
@@ -99,6 +106,8 @@ def get_services_from_server_folder(server_url, folder):
 
 
 def service_path(mxd_path, folder=None):
+    """Return a server appropriate service and folder name for mxd_path and folder."""
+
     if mxd_path is None:
         return None
     name = os.path.splitext(os.path.basename(mxd_path))[0]
