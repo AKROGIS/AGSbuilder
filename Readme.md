@@ -1,5 +1,16 @@
 # ArcGIS Service Builder
 
+**NOTE**
+This project was abandoned and archived 5/2021 Due to challanges with the 
+differences between Pro and ArcMap, and unecessary complexity. The recommended
+solution is a collection of Pro projects with publishable maps organized in
+a well known folder with a readme file to describe any special instructions.
+These maps can be updated and republished as often as necessary to keep the
+services current. For the AKRO GIS team, there are Pro projects organized in
+a services folder under each server running ArcGIS Server (See
+`T:\Projects\AKR\ArcGIS Server`).  A similar folder structure can be adopted
+for AGOL and Portal.
+
 This is a python task that will sync a local folder structure of web mapping
 service definitions (typically as maps, and layers) with an instance of ArcGIS
 Server or Portal/AGOL.  It will create, update, and delete services as needed
